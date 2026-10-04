@@ -1,0 +1,262 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Design tokens — see design.md. Do not add inline hex or rgba values in
+   components: lift a new token here first.
+   ------------------------------------------------------------------- */
+@theme {
+  /* Warm paper stack. The page is paper; raised bands are cream; cards are
+     paper with a hairline. Pure #fff appears only on form controls. */
+  --color-paper: #fffdf8;
+  --color-cream-50: #faf5ea;
+  --color-cream-100: #f4ecdb;
+  --color-cream-200: #eaddc3;
+  --color-cream-300: #dcc9a5;
+
+  /* Ink is warm near-black rather than navy: Rekhta's pages read as printed
+     matter on paper, not as a software product. */
+  --color-ink-950: #14120f;
+  --color-ink-900: #1b1a17;
+  --color-ink-800: #2c2a25;
+  --color-ink-700: #423f38;
+
+  --color-muted: #5d584c; /* body-muted text on paper */
+  --color-line: #e2d8c3;
+
+  /* Accent budget is under 5% of any viewport. Marigold carries labels,
+     rules and prices; maroon carries the wordmark and the primary action. */
+  --color-marigold-300: #f0c67a;
+  --color-marigold-500: #dd9a2b;
+  --color-marigold-600: #bd7f18;
+  --color-marigold-700: #94610f; /* small text on paper: 4.9:1 */
+
+  --color-maroon-600: #8c2231;
+  --color-maroon-700: #6f1a26;
+  --color-maroon-800: #55121c;
+
+    --color-teal-600: #0f6f6a;
+    --color-teal-700: #0b524f;
+
+    --color-whatsapp: #25d366; /* WhatsApp brand green: chat button */
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+
+  /* Nastaliq needs far more vertical room than a Latin face: the glyphs
+     stack diagonally and descend. These metrics are the reason the Urdu
+     classes below exist at all. */
+  --font-urdu: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", serif;
+
+  --shadow-lift: 0 18px 38px -26px rgb(27 26 23 / 0.5);
+  --shadow-cover: 0 14px 28px -18px rgb(27 26 23 / 0.55);
+
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* ------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------- */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* Never `hidden` — it silently clips focus rings on the x-axis. */
+    overflow-x: clip;
+  }
+
+  body {
+    overflow-x: clip;
+    background-color: var(--color-paper);
+    color: var(--color-ink-900);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* marigold-500 measures 2.4:1 on paper, below the 3:1 non-text minimum;
+     marigold-700 measures 5.3:1 on the same background. */
+  :focus-visible {
+    outline: 2px solid var(--color-marigold-700);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-marigold-300);
+    color: var(--color-ink-950);
+  }
+
+  /* Long-form Urdu gets its own scale. Nastaliq at Latin line-heights
+     collides descenders with the next line and looks broken. */
+  .urdu {
+    font-family: var(--font-urdu);
+    line-height: 2.4;
+    word-spacing: 0.06em;
+  }
+  .urdu-display {
+    font-family: var(--font-urdu);
+    line-height: 1.9;
+    word-spacing: 0.04em;
+  }
+  .urdu-prose {
+    font-family: var(--font-urdu);
+    line-height: 2.6;
+    font-size: 1.125rem;
+  }
+  /* Poetry: two consecutive lines are one sher, so the gap between pairs is
+     the visual unit and the gap between pairs is larger. */
+  .urdu-poetry {
+    font-family: var(--font-urdu);
+    line-height: 2.5;
+    font-size: 1.25rem;
+  }
+  .urdu-poetry p {
+    margin-block: 0;
+  }
+  .urdu-poetry p + p {
+    margin-block-start: 1.5rem;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Components
+   ------------------------------------------------------------------- */
+@layer components {
+  /* Small-caps section label. One per band, never a restatement of the
+     heading directly beneath it. */
+  .eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--color-marigold-700);
+  }
+  .eyebrow-light {
+    color: var(--color-marigold-300);
+  }
+  /* Long eyebrows stay in sentence case: caps suit short labels, not phrases. */
+  .eyebrow-sentence {
+    text-transform: none;
+  }
+
+  .rule-accent {
+    height: 2px;
+    width: 2.75rem;
+    background: var(--color-marigold-500);
+  }
+
+  .lift {
+    transition:
+      transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .lift:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lift);
+  }
+
+  /* Buttons never wrap their label, so a two-line CTA can never happen. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding-inline: 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .btn-primary {
+    background: var(--color-maroon-700);
+    color: #fffdf8;
+  }
+  .btn-primary:hover {
+    background: var(--color-maroon-800);
+  }
+  .btn-secondary {
+    background: transparent;
+    border-color: color-mix(in srgb, var(--color-ink-900) 25%, transparent);
+    color: var(--color-ink-900);
+  }
+  .btn-secondary:hover {
+    border-color: var(--color-ink-900);
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .field {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    background: #ffffff;
+    border: 1px solid var(--color-line);
+    border-radius: 2px;
+    font-size: 0.9375rem;
+    color: var(--color-ink-900);
+  }
+  .field:focus-visible {
+    border-color: var(--color-marigold-600);
+  }
+  .field-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-ink-800);
+    margin-block-end: 0.375rem;
+  }
+  .field-hint {
+    font-size: 0.8125rem;
+    color: var(--color-muted);
+    margin-block-start: 0.375rem;
+  }
+  /* Validation message. Bold enough to read as an error rather than a hint,
+     and tied to the field by aria-describedby rather than by proximity. */
+  .field-error {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-maroon-700);
+    margin-block-start: 0.375rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.15s !important;
+  }
+  .lift:hover {
+    transform: none;
+  }
+}

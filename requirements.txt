@@ -1,0 +1,18 @@
+# Pinned to what this project was built and verified against.
+fastapi==0.104.1
+uvicorn==0.24.0
+sqlalchemy==2.0.23
+pydantic==2.13.5
+bcrypt==4.0.1
+
+# Required by FastAPI to parse multipart/form-data. Not optional: without it
+# importing the app fails outright, because the cover-upload route declares an
+# UploadFile.
+python-multipart==0.0.20
+
+# Postgres driver. Needed in production only - local development runs on the
+# built-in SQLite. The [binary] extra avoids a compiler toolchain on Vercel.
+psycopg[binary]>=3.1
+
+# Test client for the API self-check.
+httpx==0.28.1
