@@ -50,11 +50,12 @@ export default function SiteHeader() {
             sign-in is desktop-only — on mobile it lives in the opened menu. */}
         <div className="ms-auto flex items-center gap-1">
           {/* The search field is the way into the library from anywhere, so it
-              sits in the bar rather than only on the catalogue page. */}
+              sits in the bar rather than only on the catalogue page — desktop
+              only, since the mobile bar has room for the logo and menu alone. */}
           <form
             action="/books"
             role="search"
-            className="flex items-center"
+            className="hidden items-center md:flex"
             onSubmit={(event) => {
               event.preventDefault();
               const trimmed = query.trim();

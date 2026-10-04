@@ -43,17 +43,19 @@ export default function AdminDashboard() {
             Everything on the public site comes from these lists.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Link to="/admin/books/new" className="btn btn-primary">
-            <Plus aria-hidden="true" className="size-4" />
+        {/* One horizontal row on phones: equal thirds, icons/padding trimmed
+            so the nowrap labels fit; back to the plain right-aligned row at sm. */}
+        <div className="grid grid-cols-3 gap-2 sm:flex sm:justify-end sm:gap-3">
+          <Link to="/admin/books/new" className="btn btn-primary px-2 sm:px-5">
+            <Plus aria-hidden="true" className="hidden size-4 sm:block" />
             New book
           </Link>
-          <Link to="/admin/poems/new" className="btn btn-secondary">
-            <Plus aria-hidden="true" className="size-4" />
+          <Link to="/admin/poems/new" className="btn btn-secondary px-2 sm:px-5">
+            <Plus aria-hidden="true" className="hidden size-4 sm:block" />
             New verse
           </Link>
-          <Link to="/" className="btn btn-secondary">
-            <ArrowRight aria-hidden="true" className="size-4" />
+          <Link to="/" className="btn btn-secondary px-2 sm:px-5">
+            <ArrowRight aria-hidden="true" className="hidden size-4 sm:block" />
             View site
           </Link>
         </div>
