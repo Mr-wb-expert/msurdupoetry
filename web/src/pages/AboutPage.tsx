@@ -20,7 +20,7 @@ export default function AboutPage() {
     <>
       {/* Copy mirrored in api/seo.py. */}
       <Seo
-        title="About the Urdu Poet"
+        title="Urdu Poet at GGC Burewala"
         description={`${site.fullName} is an Urdu poet and writer, and Associate Professor of English at ${site.affiliation}.`}
         image={site.portrait}
       />

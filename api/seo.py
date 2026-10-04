@@ -25,8 +25,8 @@ FULL_NAME = "Prof. Syed Mujahid Sajjad"
 PAGE_COPY = {
     "": (
         "Urdu Poetry & Urdu Shayari",
-        "Read the Urdu poetry of Mujahid Sajjad free — ghazals, nazms and shayari "
-        "online, plus every book to read in the browser or download as a PDF.",
+        "Read the Urdu poetry of Mujahid Sajjad, Urdu poet and Associate Professor "
+        "at Govt. Graduate College Burewala. Free ghazals, nazms and books online.",
     ),
     "books": (
         "Urdu Poetry Books & Criticism",
@@ -44,7 +44,7 @@ PAGE_COPY = {
         "on YouTube.",
     ),
     "about": (
-        "About the Urdu Poet",
+        "Urdu Poet at GGC Burewala",
         "Prof. Syed Mujahid Sajjad is an Urdu poet and writer, and Associate "
         "Professor of English at Govt. Graduate College Burewala, Government of "
         "the Punjab.",

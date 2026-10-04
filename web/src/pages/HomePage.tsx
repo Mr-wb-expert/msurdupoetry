@@ -74,7 +74,7 @@ export default function HomePage() {
           pre-hydration head and the settled one disagree. */}
       <Seo
         title="Urdu Poetry & Urdu Shayari"
-        description="Read the Urdu poetry of Mujahid Sajjad free — ghazals, nazms and shayari online, plus every book to read in the browser or download as a PDF."
+        description="Read the Urdu poetry of Mujahid Sajjad, Urdu poet and Associate Professor at Govt. Graduate College Burewala. Free ghazals, nazms and books online."
         image={site.portrait}
         jsonLd={{
           "@context": "https://schema.org",

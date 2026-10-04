@@ -518,6 +518,22 @@ if DIST.is_dir():
         '<meta name="robots" content="noindex, nofollow">' in admin_page,
         admin_page[:400],
     )
+    about = client.get("/about").text
+    check(
+        "about title names the college city",
+        "<title>Urdu Poet at GGC Burewala — Mujahid Sajjad</title>" in about,
+        about[:300],
+    )
+    check(
+        "home description names the college",
+        "Govt. Graduate College Burewala" in home.split('name="description"')[1][:400],
+        home[:500],
+    )
+    check(
+        "person schema carries the college address",
+        '"addressLocality":"Burewala"' in home.replace(" ", ""),
+        home[:600],
+    )
     missing = client.get("/no-such-page")
     check(
         "404 head is noindex",
