@@ -467,6 +467,64 @@ if DIST.is_dir():
     check("known book is a 200", client.get("/books/magar-manzar-nahi-mera").status_code == 200)
     check("unknown book is a 404", client.get("/books/not-a-real-slug").status_code == 404)
 
+    # Per-route head rewriting: the whole point of api.seo is that the shell
+    # does not go out identical on every URL.
+    home = client.get("/").text
+    check(
+        "home title targets the head keywords",
+        "<title>Urdu Poetry &amp; Urdu Shayari — Mujahid Sajjad</title>" in home,
+        home[:300],
+    )
+    check("home ships a canonical", 'rel="canonical" href="' in home, home[:300])
+    check("home ships og:url", 'property="og:url"' in home, home[:300])
+    check("home ships WebSite schema", '"@type":"WebSite"' in home, home[:300])
+    check(
+        "home shares the author image",
+        'property="og:image" content="' in home and "author.jpeg" in home,
+        home[:400],
+    )
+
+    books = client.get("/books").text
+    check(
+        "books title names urdu poetry books",
+        "<title>Urdu Poetry Books &amp; Criticism — Mujahid Sajjad</title>" in books,
+        books[:300],
+    )
+
+    book_page = client.get("/books/magar-manzar-nahi-mera").text
+    check(
+        "book page title names the book and kind",
+        "<title>Magar Manzar Nahi Mera — Urdu Poetry Book — Mujahid Sajjad</title>"
+        in book_page,
+        book_page[:300],
+    )
+    check(
+        "book page ships Book schema",
+        '"@type":"Book"' in book_page and '"isAccessibleForFree":true' in book_page,
+        book_page[:400],
+    )
+    check(
+        "book page canonical points at itself",
+        'rel="canonical" href="' in book_page
+        and book_page.split('rel="canonical" href="')[1].split('"')[0].endswith(
+            "/books/magar-manzar-nahi-mera"
+        ),
+        book_page[:400],
+    )
+
+    admin_page = client.get("/admin").text
+    check(
+        "admin page is noindex in the head",
+        '<meta name="robots" content="noindex, nofollow">' in admin_page,
+        admin_page[:400],
+    )
+    missing = client.get("/no-such-page")
+    check(
+        "404 head is noindex",
+        '<meta name="robots" content="noindex, nofollow">' in missing.text,
+        missing.text[:400],
+    )
+
 print(f"api check: {passed} assertions passed")
 
 # Cleanup must never turn a passing run into a failing one, so the summary is

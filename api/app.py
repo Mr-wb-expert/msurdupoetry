@@ -61,6 +61,7 @@ from sqlalchemy.orm import Session  # noqa: E402
 from api.db import get_db  # noqa: E402
 from api.models import Poem  # noqa: E402
 from api.routes import MEDIA_DIR, _books_query, admin, public, public_review  # noqa: E402
+from api import seo  # noqa: E402
 
 DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
 SITE_URL = os.environ.get("SITE_URL", "").rstrip("/")
@@ -134,6 +135,10 @@ if DIST.is_dir():
     if (DIST / "assets").is_dir():
         app.mount("/assets", StaticFiles(directory=DIST / "assets"), name="assets")
 
+    # Read once at import: every page request rewrites the same document, so
+    # re-reading the file per request would be pure overhead.
+    _SHELL = (DIST / "index.html").read_text(encoding="utf-8")
+
     @app.get("/{spa_path:path}", include_in_schema=False)
     def spa(spa_path: str, db: Session = Depends(get_db)):
         """Client-side routes have no file behind them, so anything that is not
@@ -141,7 +146,11 @@ if DIST.is_dir():
 
         The shell goes out with a 404 status for anything that is not a page
         this site actually has. Serving every typo as 200 is a soft 404: the
-        index fills with empty pages and the crawler stops trusting the rest."""
+        index fills with empty pages and the crawler stops trusting the rest.
+
+        The head is rewritten per route first — see api.seo: without it every
+        URL would ship one identical title, description and schema, which is
+        all a crawler that skips JavaScript ever sees."""
         candidate = (DIST / spa_path).resolve()
         if spa_path and candidate.is_file() and DIST.resolve() in candidate.parents:
             return FileResponse(candidate)
@@ -154,4 +163,9 @@ if DIST.is_dir():
         known = set(STATIC_PAGES) | {"admin"}
         known.update(f"books/{book.slug}" for book in _books_query(db).all())
         known.update(f"poems/{poem.slug}" for poem in db.query(Poem).all())
-        return FileResponse(DIST / "index.html", status_code=200 if path in known else 404)
+        meta = seo.head(path, db, SITE_URL or "http://localhost:8000")
+        return Response(
+            content=seo.apply(_SHELL, meta),
+            status_code=200 if path in known else 404,
+            media_type="text/html; charset=utf-8",
+        )

@@ -70,9 +70,11 @@ export default function HomePage() {
 
   return (
     <>
+      {/* Titles/descriptions mirror api/seo.py — change both, or the
+          pre-hydration head and the settled one disagree. */}
       <Seo
-        title={site.author}
-        description={site.description}
+        title="Urdu Poetry & Urdu Shayari"
+        description="Read the Urdu poetry of Mujahid Sajjad free — ghazals, nazms and shayari online, plus every book to read in the browser or download as a PDF."
         image={site.portrait}
         jsonLd={{
           "@context": "https://schema.org",

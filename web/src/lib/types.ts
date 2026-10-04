@@ -21,6 +21,15 @@ export const categoryLabels: Record<BookCategory, string> = {
   other: "Literature",
 };
 
+/** SEO title fragment per category — mirrored in api/seo.py. */
+export const BOOK_KIND: Record<BookCategory, string> = {
+  poetry: "Urdu Poetry Book",
+  criticism: "Criticism Book",
+  essays: "Essays",
+  research: "Research Book",
+  other: "Book",
+};
+
 export type Book = {
   slug: string;
   title: string;

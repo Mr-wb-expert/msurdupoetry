@@ -18,8 +18,9 @@ export default function AboutPage() {
 
   return (
     <>
+      {/* Copy mirrored in api/seo.py. */}
       <Seo
-        title="About"
+        title="About the Urdu Poet"
         description={`${site.fullName} is an Urdu poet and writer, and Associate Professor of English at ${site.affiliation}.`}
         image={site.portrait}
       />

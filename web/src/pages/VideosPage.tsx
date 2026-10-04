@@ -1,7 +1,6 @@
 import Seo from "@/components/Seo.tsx";
 import { ErrorNote, Loading } from "@/components/Feedback.tsx";
 import { getVideos } from "@/lib/api.ts";
-import { site } from "@/lib/site";
 import { youtubeId } from "@/lib/videos";
 import { useApi } from "@/lib/useApi";
 
@@ -16,7 +15,11 @@ export default function VideosPage() {
 
   return (
     <>
-      <Seo title="Videos" description={`Videos by ${site.fullName}.`} />
+      {/* Copy mirrored in api/seo.py. */}
+      <Seo
+        title="Urdu Poetry Videos"
+        description="Watch Urdu poetry videos by Mujahid Sajjad — ghazal and shayari readings on YouTube."
+      />
 
       <section className="border-b border-line bg-cream-50">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">

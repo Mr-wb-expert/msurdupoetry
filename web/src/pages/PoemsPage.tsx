@@ -55,9 +55,10 @@ export default function PoemsPage() {
 
   return (
     <>
+      {/* Copy mirrored in api/seo.py. */}
       <Seo
-        title="Verses"
-        description="Couplets from Mujahid Sajjad — ghazal and nazm verses in Urdu, free to read and share."
+        title="Urdu Poems & Shayari — Ghazals, Nazms"
+        description="Read Urdu shayari by Mujahid Sajjad — ghazal and nazm couplets in Urdu, free to read and share."
       />
 
       <div className="border-b border-line bg-cream-50">

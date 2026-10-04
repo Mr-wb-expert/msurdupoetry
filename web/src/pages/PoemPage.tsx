@@ -25,9 +25,10 @@ export default function PoemPage() {
 
   return (
     <>
+      {/* Title/description pattern mirrored in api/seo.py. */}
       <Seo
-        title={item.title}
-        description={`A poem by ${site.author}.`}
+        title={`${item.title} — Urdu ${item.type ?? "Poem"}`}
+        description={`Read ${item.title} by Mujahid Sajjad — an Urdu ${(item.type ?? "Poem").toLowerCase()} free online.`}
         jsonLd={[
           {
             "@context": "https://schema.org",

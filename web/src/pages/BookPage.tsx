@@ -14,7 +14,7 @@ import { downloadUrl, embedUrl, externalReadUrl, relatedBooks } from "@/lib/book
 import { site } from "@/lib/site";
 import { useApi } from "@/lib/useApi.ts";
 import { getBook, getBooks, getReviewsForBook } from "@/lib/api.ts";
-import { categoryLabels } from "@/lib/types";
+import { BOOK_KIND, categoryLabels } from "@/lib/types";
 
 export default function BookPage() {
   const { slug = "" } = useParams();
@@ -40,8 +40,9 @@ export default function BookPage() {
 
   return (
     <>
+      {/* Title pattern mirrored in api/seo.py. */}
       <Seo
-        title={item.title}
+        title={`${item.title} — ${BOOK_KIND[item.category]}`}
         description={item.description.slice(0, 300)}
         image={item.coverImage}
         jsonLd={[

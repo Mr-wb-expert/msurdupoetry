@@ -54,8 +54,9 @@ export default function BooksPage() {
 
   return (
     <>
+      {/* Copy mirrored in api/seo.py. */}
       <Seo
-        title="Books"
+        title="Urdu Poetry Books & Criticism"
         description="Every book by Mujahid Sajjad — poetry, criticism and essays. Read online or download the PDF free."
       />
 
