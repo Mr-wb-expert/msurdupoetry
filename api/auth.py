@@ -28,8 +28,9 @@ from .models import Admin
 
 # Seconds a session lasts. The default is 0: never — the admin stays signed
 # in until Sign out, a browser-side delete, or an admin removal. Any positive
-# value restores a real TTL (older deployments used 12 hours).
-TOKEN_TTL = int(os.environ.get("ADMIN_TOKEN_TTL", "0"))
+# value restores a real TTL (older deployments used 12 hours). `or` treats an
+# empty value as unset — `ADMIN_TOKEN_TTL=` must not crash int() at import.
+TOKEN_TTL = int(os.environ.get("ADMIN_TOKEN_TTL") or 0)
 
 SESSION_COOKIE = "admin_session"
 
