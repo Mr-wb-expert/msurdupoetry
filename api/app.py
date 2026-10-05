@@ -59,8 +59,8 @@ from fastapi.staticfiles import StaticFiles  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
 from api.db import Base, engine, get_db  # noqa: E402
-from api.models import Poem  # noqa: E402
-from api.routes import MEDIA_DIR, _books_query, admin, public, public_review  # noqa: E402
+from api.models import MediaFile, Poem  # noqa: E402
+from api.routes import _books_query, admin, public, public_review  # noqa: E402
 from api import seo  # noqa: E402
 from api.seed import _add_missing_columns  # noqa: E402
 
@@ -88,12 +88,15 @@ app.include_router(public, prefix="/api")
 app.include_router(public_review, prefix="/api")
 app.include_router(admin, prefix="/api")
 
-# Uploaded covers. The directory is created lazily by the upload route, never
-# here: a serverless filesystem is read-only, so creating it at import time
-# would crash the whole app before a single route is served. check_dir=False
-# lets the mount exist while the directory does not — requests just 404 until
-# the first upload makes it.
-app.mount("/media", StaticFiles(directory=MEDIA_DIR, check_dir=False), name="media")
+# Uploaded covers, served from their database row: the production filesystem
+# is read-only and ephemeral, so a file written there could never be kept or
+# read back (the 500 the admin saw on every upload).
+@app.get("/media/{name}", include_in_schema=False)
+def serve_media(name: str, db: Session = Depends(get_db)) -> Response:
+    row = db.get(MediaFile, name)
+    if row is None:
+        return Response(status_code=404)
+    return Response(content=row.data, media_type=row.content_type)
 
 # Pages that always exist. The catalogue entries are added below.
 STATIC_PAGES = ["", "books", "poems", "videos", "about"]

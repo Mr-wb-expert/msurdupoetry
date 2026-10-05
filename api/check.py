@@ -9,17 +9,16 @@ the session cookie's attributes, logout, the admin guard, slug collision,
 cover upload validation, review moderation, the honeypot, the rate limit, and
 the cascade delete on book removal.
 
-Uses its own throwaway database and media directory with the in-process test
-client, so it needs no running server and touches nothing in `api.db` or
-`api/media`. Each test simulates a distinct client IP so the shared rate limiter
-does not make assertions order-dependent.
+Uses its own throwaway database with the in-process test client, so it needs
+no running server and touches nothing in `api.db`. Each test simulates a
+distinct client IP so the shared rate limiter does not make assertions
+order-dependent.
 """
 
 import os
 import sys
 import tempfile
 import warnings
-from pathlib import Path
 
 # Starlette's test client warns that httpx is the wrong client library. The
 # warning is noise here and would look like a failure in CI output.
@@ -36,17 +35,11 @@ os.environ.pop("ADMIN_PASSWORD", None)
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from api import routes  # noqa: E402
 from api.app import app, DIST  # noqa: E402
 from api import seed  # noqa: E402
 from api.auth import hash_password, make_token, read_token  # noqa: E402
 from api.db import Base, SessionLocal, engine  # noqa: E402
 from api.models import Admin, Book  # noqa: E402
-
-# Uploads go to a scratch directory, so a failed run cannot leave cover files
-# behind in the real media folder. routes.upload_cover reads this at call time.
-MEDIA_DIR = Path(tempfile.mkdtemp(prefix="api-check-media-"))
-routes.MEDIA_DIR = MEDIA_DIR
 
 Base.metadata.create_all(engine)
 _db = SessionLocal()
@@ -210,7 +203,12 @@ r = client.post(
 check("cover accepted", r.status_code == 200, r.text)
 cover_url = r.json()["coverImage"]
 check("cover path points at /media", str(cover_url).startswith("/media/"), str(cover_url))
-check("cover file written", (MEDIA_DIR / Path(cover_url).name).exists(), cover_url)
+served = client.get(cover_url)
+check(
+    "cover round-trips through the database",
+    served.status_code == 200 and served.content == PNG,
+    f"{cover_url} -> {served.status_code}",
+)
 check("client filename discarded", "cover.png" not in cover_url, cover_url)
 
 r = client.post(
@@ -562,9 +560,6 @@ print(f"api check: {passed} assertions passed")
 
 # Cleanup must never turn a passing run into a failing one, so the summary is
 # printed first and locked files are tolerated - they live in TEMP either way.
-import shutil  # noqa: E402
-
-shutil.rmtree(MEDIA_DIR, ignore_errors=True)
 engine.dispose()
 try:
     os.remove(_TMP_DB)

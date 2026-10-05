@@ -31,7 +31,7 @@ from .auth import (
     verify_password,
 )
 from .db import get_db
-from .models import Admin, Book, ContactMessage, Poem, Review, Video
+from .models import Admin, Book, ContactMessage, MediaFile, Poem, Review, Video
 from .schemas import (
     AdminOut,
     BookCreate,
@@ -57,7 +57,6 @@ from .schemas import (
 # Cover uploads
 # ---------------------------------------------------------------------------
 
-MEDIA_DIR = Path(__file__).resolve().parent / "media"
 MAX_COVER_BYTES = 8 * 1024 * 1024
 
 # Keyed by extension: the magic bytes each format must start with. Checking the
@@ -374,7 +373,8 @@ def upload_cover(
     The filename is generated, never taken from the client, so a crafted
     `../../etc/passwd` has nowhere to land. The extension is checked against an
     allowlist and the bytes are sniffed, so a `.png` that is really something
-    else never reaches the media directory.
+    else never reaches storage. Storage is a database row, not a file: the
+    production filesystem is read-only.
     """
     book = db.query(Book).filter(Book.slug == slug).first()
     if book is None:
@@ -399,9 +399,8 @@ def upload_cover(
             detail="That file is not a readable image.",
         )
 
-    MEDIA_DIR.mkdir(parents=True, exist_ok=True)
     name = f"{uuid4().hex}.{ext}"
-    (MEDIA_DIR / name).write_bytes(data)
+    db.add(MediaFile(name=name, content_type=file.content_type or "", data=data))
 
     book.cover_image = f"/media/{name}"
     db.commit()

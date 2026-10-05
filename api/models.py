@@ -6,7 +6,7 @@ renaming when data moves out of `lib/books.ts` and into the database.
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, LargeBinary, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base, utcnow
@@ -115,3 +115,19 @@ class Video(Base):
     url: Mapped[str] = mapped_column(String(500))
     description: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class MediaFile(Base):
+    """An uploaded file, kept in the database rather than on disk.
+
+    Vercel's function filesystem is read-only and ephemeral: a file written
+    there is refused with a 500 (or silently lost on the next cold start).
+    The bytes travel with the database instead — SQLite locally, Postgres in
+    production — and /media serves them from the row.
+    """
+
+    __tablename__ = "media"
+
+    name: Mapped[str] = mapped_column(String(64), primary_key=True)
+    content_type: Mapped[str] = mapped_column(String(64))
+    data: Mapped[bytes] = mapped_column(LargeBinary)
