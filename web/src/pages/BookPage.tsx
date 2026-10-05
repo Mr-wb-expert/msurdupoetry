@@ -158,17 +158,23 @@ export default function BookPage() {
             }
           />
           <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_360px]">
-            <ReviewList
-              reviews={reviews.data ?? []}
-              loading={reviews.loading}
-              error={reviews.error}
-              onRetry={reviews.reload}
-            />
-            <ReviewForm
-              bookSlug={item.slug}
-              bookTitle={item.title}
-              onSubmitted={reviews.reload}
-            />
+            {/* Order only: on phones the form comes first and the list (empty
+                or not) sits under it; at lg the columns are as before. */}
+            <div className="order-2 lg:order-1">
+              <ReviewList
+                reviews={reviews.data ?? []}
+                loading={reviews.loading}
+                error={reviews.error}
+                onRetry={reviews.reload}
+              />
+            </div>
+            <div className="order-1 lg:order-2">
+              <ReviewForm
+                bookSlug={item.slug}
+                bookTitle={item.title}
+                onSubmitted={reviews.reload}
+              />
+            </div>
           </div>
         </div>
       </section>
