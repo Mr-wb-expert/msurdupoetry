@@ -3,10 +3,11 @@
  * Pydantic serialises by alias, so nothing has to be renamed on arrival.
  */
 
-export type BookCategory = "poetry" | "criticism" | "essays" | "research" | "other";
+export type BookCategory = "poetry" | "ghazal" | "criticism" | "essays" | "research" | "other";
 
 export const CATEGORIES: BookCategory[] = [
   "poetry",
+  "ghazal",
   "criticism",
   "essays",
   "research",
@@ -15,6 +16,7 @@ export const CATEGORIES: BookCategory[] = [
 
 export const categoryLabels: Record<BookCategory, string> = {
   poetry: "Poetry",
+  ghazal: "Ghazal",
   criticism: "Criticism",
   essays: "Essays",
   research: "Research",
@@ -24,6 +26,7 @@ export const categoryLabels: Record<BookCategory, string> = {
 /** SEO title fragment per category — mirrored in api/seo.py. */
 export const BOOK_KIND: Record<BookCategory, string> = {
   poetry: "Urdu Poetry Book",
+  ghazal: "Ghazal Poetry Book",
   criticism: "Criticism Book",
   essays: "Essays",
   research: "Research Book",
@@ -54,6 +57,8 @@ export type VerseType = (typeof VERSE_TYPES)[number];
 export type Poem = {
   slug: string;
   title: string;
+  /** Null only for a verse saved before the field existed. */
+  author: string | null;
   body: string;
   /** Null only for a verse saved before the field existed. */
   type: VerseType | null;

@@ -44,7 +44,8 @@ export default function AdminDashboard() {
           </p>
         </div>
         {/* One horizontal row on phones: equal thirds, icons/padding trimmed
-            so the nowrap labels fit; back to the plain right-aligned row at sm. */}
+            so the nowrap labels fit; back to the plain right-aligned row at sm.
+            "View site" sits at the end of the dashboard instead. */}
         <div className="grid grid-cols-3 gap-2 sm:flex sm:justify-end sm:gap-3">
           <Link to="/admin/books/new" className="btn btn-primary px-2 sm:px-5">
             <Plus aria-hidden="true" className="hidden size-4 sm:block" />
@@ -54,9 +55,9 @@ export default function AdminDashboard() {
             <Plus aria-hidden="true" className="hidden size-4 sm:block" />
             New verse
           </Link>
-          <Link to="/" className="btn btn-secondary px-2 sm:px-5">
-            <ArrowRight aria-hidden="true" className="hidden size-4 sm:block" />
-            View site
+          <Link to="/admin/videos/new" className="btn btn-secondary px-2 sm:px-5">
+            <Plus aria-hidden="true" className="hidden size-4 sm:block" />
+            New video
           </Link>
         </div>
       </div>
@@ -130,6 +131,13 @@ export default function AdminDashboard() {
             ))}
           </ul>
         </Panel>
+      </div>
+
+      <div className="mt-8 flex justify-center border-t border-line pt-6">
+        <Link to="/" className="btn btn-primary">
+          <ArrowRight aria-hidden="true" className="size-4" />
+          View site
+        </Link>
       </div>
     </div>
   );

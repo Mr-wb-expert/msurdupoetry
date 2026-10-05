@@ -28,13 +28,13 @@ export default function PoemPage() {
       {/* Title/description pattern mirrored in api/seo.py. */}
       <Seo
         title={`${item.title} — Urdu ${item.type ?? "Poem"}`}
-        description={`Read ${item.title} by Mujahid Sajjad — an Urdu ${(item.type ?? "Poem").toLowerCase()} free online.`}
+        description={`Read ${item.title} by ${item.author || site.author} — an Urdu ${(item.type ?? "Poem").toLowerCase()} free online.`}
         jsonLd={[
           {
             "@context": "https://schema.org",
             "@type": "CreativeWork",
             name: item.title,
-            author: { "@type": "Person", name: site.fullName },
+            author: { "@type": "Person", name: item.author || site.fullName },
             inLanguage: "ur",
           },
           {
@@ -68,6 +68,7 @@ export default function PoemPage() {
         </nav>
 
         <h1 className="mt-6 text-3xl sm:text-4xl">{item.title}</h1>
+        <p className="mt-3 text-sm text-muted">{item.author || site.author}</p>
 
         <div aria-hidden="true" className="rule-accent mt-6" />
 

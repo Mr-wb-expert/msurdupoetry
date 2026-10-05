@@ -4,6 +4,7 @@ import { Save } from "lucide-react";
 
 import { ErrorNote, Loading } from "@/components/Feedback.tsx";
 import { errorMessage } from "./useAuth.ts";
+import SaveDialog from "./SaveDialog.tsx";
 import { createBook, getBook, updateBook, uploadCover } from "@/lib/api.ts";
 import { useApi } from "@/lib/useApi.ts";
 import { CATEGORIES, categoryLabels, type Book, type BookCategory } from "@/lib/types";
@@ -65,9 +66,13 @@ export default function AdminBookForm() {
 
   const [draft, setDraft] = useState<Draft>(blank);
   const [busy, setBusy] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ message: string; failed: boolean } | null>(null);
+  // Set once a create succeeds, so a second Save (e.g. after a failed cover
+  // upload) updates instead of creating the book twice.
+  const [createdSlug, setCreatedSlug] = useState<string | null>(null);
 
   // Load the existing book into the form exactly once, so an edit made
   // elsewhere is not overwritten by a re-render.
@@ -77,7 +82,6 @@ export default function AdminBookForm() {
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => {
     setDraft((current) => ({ ...current, [key]: value }));
-    setSaved(false);
   };
 
   async function save(event: React.FormEvent) {
@@ -98,14 +102,30 @@ export default function AdminBookForm() {
         sort_order: Number(draft.sortOrder) || 0,
       };
 
-      const savedBook = isNew
-        ? await createBook({ ...payload, slug: orNull(draft.slug) })
-        : await updateBook(slug, { ...payload, slug: orNull(draft.slug) });
+      const book = createdSlug
+        ? await updateBook(createdSlug, { ...payload, slug: orNull(draft.slug) })
+        : isNew
+          ? await createBook({ ...payload, slug: orNull(draft.slug) })
+          : await updateBook(slug, { ...payload, slug: orNull(draft.slug) });
+      if (isNew && !createdSlug) setCreatedSlug(book.slug);
 
-      setSaved(true);
-      // On a create, the slug only exists now, so move to the canonical URL
-      // rather than staying on a form for a record that does not have one yet.
-      navigate(`/admin/books/${savedBook.slug}`, { replace: true });
+      // The cover needs the book's slug, so it goes up after the save —
+      // one click for fields and photo together.
+      let failedDetail: string | null = null;
+      if (coverFile) {
+        try {
+          await uploadCover(book.slug, coverFile);
+        } catch (coverError) {
+          failedDetail = errorMessage(coverError);
+        }
+      }
+      setNotice({
+        failed: failedDetail !== null,
+        message:
+          failedDetail !== null
+            ? `The book was saved, but the cover did not upload: ${failedDetail}. Upload it again from the edit page.`
+            : "Your book has been saved.",
+      });
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
@@ -113,25 +133,11 @@ export default function AdminBookForm() {
     }
   }
 
-  async function onCover(file: File | undefined) {
+  function onCover(file: File | undefined) {
     if (!file) return;
-    setUploading(true);
-    setError(null);
-    try {
-      // The book must exist before it can have a cover, so a cover dropped on
-      // a brand-new record is saved after the first save.
-      const target = isNew ? (draft.slug.trim() || null) : slug;
-      if (!target) {
-        setError("Save the book once before uploading a cover, so it has a URL.");
-        return;
-      }
-      const updated = await uploadCover(target, file);
-      set("coverImage", updated.coverImage ?? "");
-    } catch (caught) {
-      setError(errorMessage(caught));
-    } finally {
-      setUploading(false);
-    }
+    if (coverPreview) URL.revokeObjectURL(coverPreview);
+    setCoverFile(file);
+    setCoverPreview(URL.createObjectURL(file));
   }
 
   if (!isNew && existing.loading) return <Loading label="Loading the book" />;
@@ -181,6 +187,7 @@ export default function AdminBookForm() {
             </label>
             <input
               id="author"
+              required
               value={draft.author}
               onChange={(event) => set("author", event.target.value)}
               className="field"
@@ -212,6 +219,7 @@ export default function AdminBookForm() {
             <textarea
               id="description"
               rows={5}
+              required
               value={draft.description}
               onChange={(event) => set("description", event.target.value)}
               className="field"
@@ -229,6 +237,7 @@ export default function AdminBookForm() {
             <input
               id="pdfUrl"
               type="url"
+              required
               value={draft.pdfUrl}
               onChange={(event) => set("pdfUrl", event.target.value)}
               placeholder="https://drive.google.com/file/d/…/view"
@@ -317,7 +326,15 @@ export default function AdminBookForm() {
 
           <div className="flex flex-wrap items-start gap-5">
             <div className="w-24 shrink-0 overflow-hidden rounded-sm">
-              {draft.coverImage ? (
+              {coverFile && coverPreview ? (
+                <img
+                  src={coverPreview}
+                  alt="Selected cover"
+                  width={96}
+                  height={128}
+                  className="aspect-[3/4] w-full object-cover"
+                />
+              ) : draft.coverImage ? (
                 <img
                   src={draft.coverImage}
                   alt="Current cover"
@@ -354,17 +371,16 @@ export default function AdminBookForm() {
                   id="cover"
                   type="file"
                   accept="image/png,image/jpeg,image/webp,image/avif"
-                  disabled={uploading}
                   onChange={(event) => {
-                    void onCover(event.target.files?.[0]);
+                    onCover(event.target.files?.[0]);
                     // Reset so re-picking the same file fires onChange again.
                     event.target.value = "";
                   }}
                   className="field py-2 file:me-3 file:rounded-sm file:border-0 file:bg-cream-100 file:px-3 file:py-1 file:text-sm file:font-medium"
                 />
                 <p className="field-hint">
-                  PNG, JPEG, WebP or AVIF, up to 8 MB. Uploading replaces the cover and saves it
-                  straight away.
+                  PNG, JPEG, WebP or AVIF, up to 8 MB. Pick it here and it uploads together
+                  with the rest of the book when you save.
                 </p>
               </div>
             </div>
@@ -374,11 +390,6 @@ export default function AdminBookForm() {
         {error && (
           <p role="alert" className="rounded-sm bg-maroon-700/5 p-3 text-sm font-medium text-maroon-700">
             {error}
-          </p>
-        )}
-        {saved && !error && (
-          <p role="status" className="text-sm font-medium text-teal-700">
-            Saved.
           </p>
         )}
 
@@ -392,6 +403,26 @@ export default function AdminBookForm() {
           </Link>
         </div>
       </form>
+
+      {/* Save result: a styled dialog instead of window.alert. */}
+      {notice && (
+        <SaveDialog
+          failed={notice.failed}
+          title={notice.failed ? "Saved — but the cover failed" : "Book saved"}
+          message={notice.message}
+          primaryLabel="Go to Books"
+          onPrimary={() => navigate("/admin/books", { replace: true })}
+          secondaryLabel={
+            notice.failed || !isNew
+              ? notice.failed
+                ? "Fix the cover"
+                : "Keep editing"
+              : undefined
+          }
+          onSecondary={() => setNotice(null)}
+          onDismiss={() => setNotice(null)}
+        />
+      )}
     </div>
   );
 }

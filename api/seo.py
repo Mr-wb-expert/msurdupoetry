@@ -15,6 +15,7 @@ gains a " — Mujahid Sajjad" suffix.
 import html
 import json
 import re
+from urllib.parse import quote
 
 from api.models import Book, Poem
 
@@ -24,7 +25,7 @@ FULL_NAME = "Prof. Syed Mujahid Sajjad"
 # path -> (title, description). Keep in step with web/src/pages/*.tsx.
 PAGE_COPY = {
     "": (
-        "Urdu Poetry & Urdu Shayari",
+        "Urdu Poetry & Shayari, Free Books Online",
         "Read the Urdu poetry of Mujahid Sajjad, Urdu poet and Associate Professor "
         "at Govt. Graduate College Burewala. Free ghazals, nazms and books online.",
     ),
@@ -51,9 +52,39 @@ PAGE_COPY = {
     ),
 }
 
+# Visible FAQ at the foot of /about — the FAQPage schema must repeat it
+# exactly. Keep in step with AboutPage.tsx.
+FAQ = [
+    (
+        "Who is Mujahid Sajjad?",
+        "Syed Mujahid Sajjad is an Urdu poet and writer, and Associate Professor "
+        "of English at Govt. Graduate College Burewala, Government of the Punjab.",
+    ),
+    (
+        "Where can I read Magar Manzar Nahi Mera online?",
+        "The whole book is free on this site — read it in the browser or download "
+        "the PDF from the Books page. No account is needed.",
+    ),
+    (
+        "Are the books free to download?",
+        "Yes. Every book is free to read online and free to download as a PDF — "
+        "no account, no payment.",
+    ),
+    (
+        "Who wrote the criticism of his poetry?",
+        "Ghazala Anjum's critical study, An Article on the Poetry of Mujahid "
+        "Sajjad, sits in the library alongside the collection.",
+    ),
+    (
+        "What languages does he write in?",
+        "He writes poetry in Urdu and teaches English.",
+    ),
+]
+
 # Book pages name their category; mirrors BOOK_KIND in web/src/lib/types.ts.
 BOOK_KIND = {
     "poetry": "Urdu Poetry Book",
+    "ghazal": "Ghazal Poetry Book",
     "criticism": "Criticism Book",
     "essays": "Essays",
     "research": "Research Book",
@@ -63,6 +94,16 @@ BOOK_KIND = {
 
 def _full_title(title: str) -> str:
     return title if title == SITE_NAME else f"{title} — {SITE_NAME}"
+
+
+def _abs_image(src: str | None, origin: str) -> str | None:
+    """Absolute, percent-encoded image URL — share crawlers resolve neither
+    site-relative paths nor raw spaces in a filename."""
+    if not src:
+        return None
+    if not src.startswith(("http://", "https://")):
+        src = f"{origin}/{src.lstrip('/')}"
+    return quote(src, safe="/:")
 
 
 def _breadcrumb(
@@ -99,8 +140,6 @@ def head(path: str, db, origin: str) -> dict:
 
     if path in PAGE_COPY:
         title, description = PAGE_COPY[path]
-        if path in ("", "about"):
-            image = "/images/author.jpeg"
         if path == "":
             graph = [
                 {
@@ -109,6 +148,21 @@ def head(path: str, db, origin: str) -> dict:
                     "name": SITE_NAME,
                     "url": f"{origin}/",
                     "description": description,
+                }
+            ]
+        elif path == "about":
+            graph = [
+                {
+                    "@context": "https://schema.org",
+                    "@type": "FAQPage",
+                    "mainEntity": [
+                        {
+                            "@type": "Question",
+                            "name": question,
+                            "acceptedAnswer": {"@type": "Answer", "text": answer},
+                        }
+                        for question, answer in FAQ
+                    ],
                 }
             ]
     elif path.startswith("books/"):
@@ -130,14 +184,14 @@ def head(path: str, db, origin: str) -> dict:
                     "inLanguage": ["ur", "en"],
                     "bookFormat": "https://schema.org/Pdf",
                     "isAccessibleForFree": True,
-                    **({"image": book.cover_image} if book.cover_image else {}),
+                    **({"image": _abs_image(book.cover_image, origin)} if book.cover_image else {}),
                     **(
                         {"datePublished": str(book.published_year)}
                         if book.published_year
                         else {}
                     ),
                     **({"numberOfPages": book.pages} if book.pages else {}),
-                    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "INR"},
+                    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "PKR"},
                 },
                 _breadcrumb("Books", "books", book.title, path, origin),
             ]
@@ -149,7 +203,7 @@ def head(path: str, db, origin: str) -> dict:
             kind = poem.type or "Poem"
             title = f"{poem.title} — Urdu {kind}"
             description = (
-                f"Read {poem.title} by Mujahid Sajjad — an Urdu {kind.lower()} "
+                f"Read {poem.title} by {poem.author or SITE_NAME} — an Urdu {kind.lower()} "
                 "free online."
             )
             graph = [
@@ -157,7 +211,7 @@ def head(path: str, db, origin: str) -> dict:
                     "@context": "https://schema.org",
                     "@type": "CreativeWork",
                     "name": poem.title,
-                    "author": {"@type": "Person", "name": FULL_NAME},
+                    "author": {"@type": "Person", "name": poem.author or FULL_NAME},
                     "inLanguage": "ur",
                 },
                 _breadcrumb("Verses", "poems", poem.title, path, origin),
@@ -172,8 +226,11 @@ def head(path: str, db, origin: str) -> dict:
         else:
             title, description = "Page not found", "This page does not exist."
 
-    if image and not image.startswith(("http://", "https://")):
-        image = f"{origin}{image}" if image.startswith("/") else f"{origin}/{image}"
+    # Every public page has a share image; admin and 404 do not. Book pages
+    # carry their own cover; everything else gets the branded card.
+    if not noindex and not image:
+        image = "/images/og-cover.png"
+    image = _abs_image(image, origin)
 
     return {
         "title": _full_title(title),
@@ -214,6 +271,10 @@ def apply(document: str, meta: dict) -> str:
     if meta["image"]:
         image = html.escape(meta["image"], quote=True)
         tags.append(f'<meta property="og:image" content="{image}">')
+    card = "summary_large_image" if meta["image"] else "summary"
+    tags.append(f'<meta name="twitter:card" content="{card}">')
+    tags.append(f'<meta name="twitter:title" content="{title_attr}">')
+    tags.append(f'<meta name="twitter:description" content="{description}">')
     if meta["noindex"]:
         tags.append('<meta name="robots" content="noindex, nofollow">')
     if meta["graph"]:

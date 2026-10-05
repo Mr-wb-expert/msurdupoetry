@@ -6,6 +6,41 @@ import { useApi } from "@/lib/useApi.ts";
 import { getBooks } from "@/lib/api.ts";
 import { Link } from "react-router-dom";
 
+// Mirrors FAQ in api/seo.py — the schema and the visible copy must be
+// identical, so both live here in the same words.
+const faq = [
+  {
+    q: "Who is Mujahid Sajjad?",
+    a: "Syed Mujahid Sajjad is an Urdu poet and writer, and Associate Professor of English at Govt. Graduate College Burewala, Government of the Punjab.",
+  },
+  {
+    q: "Where can I read Magar Manzar Nahi Mera online?",
+    a: "The whole book is free on this site — read it in the browser or download the PDF from the Books page. No account is needed.",
+  },
+  {
+    q: "Are the books free to download?",
+    a: "Yes. Every book is free to read online and free to download as a PDF — no account, no payment.",
+  },
+  {
+    q: "Who wrote the criticism of his poetry?",
+    a: "Ghazala Anjum's critical study, An Article on the Poetry of Mujahid Sajjad, sits in the library alongside the collection.",
+  },
+  {
+    q: "What languages does he write in?",
+    a: "He writes poetry in Urdu and teaches English.",
+  },
+];
+
+const faqGraph = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faq.map(({ q, a }) => ({
+    "@type": "Question",
+    name: q,
+    acceptedAnswer: { "@type": "Answer", text: a },
+  })),
+};
+
 export default function AboutPage() {
   const library = useApi(getBooks);
   const books = library.data ?? [];
@@ -18,11 +53,11 @@ export default function AboutPage() {
 
   return (
     <>
-      {/* Copy mirrored in api/seo.py. */}
+      {/* Copy mirrored in api/seo.py (PAGE_COPY + FAQ). */}
       <Seo
         title="Urdu Poet at GGC Burewala"
-        description={`${site.fullName} is an Urdu poet and writer, and Associate Professor of English at ${site.affiliation}.`}
-        image={site.portrait}
+        description={`${site.fullName} is an Urdu poet and writer, and Associate Professor of English at ${site.affiliation}, Government of the Punjab.`}
+        jsonLd={faqGraph}
       />
 
       {/* Portrait left, story right — the mirror of the home hero. */}
@@ -50,6 +85,13 @@ export default function AboutPage() {
               abstraction the street, the classroom, the people passing through and his criticism
               reads that work closely and without decoration. He teaches English at{" "}
               {site.affiliation}.
+            </p>
+            <p className="mt-4 max-w-2xl leading-relaxed text-ink-800">
+              The collection <span className="font-medium text-ink-900">Magar Manzar Nahi Mera</span>{" "}
+              gathers those ghazals and nazms between two covers, and Ghazala Anjum's critical
+              study of the work accompanies it in the library. Both are free here in full —
+              read online, or download the PDF — alongside essays and contributed writing from
+              across his years of teaching.
             </p>
 
             <dl className="mt-8 grid gap-x-8 gap-y-4 border-t border-line pt-6 sm:grid-cols-2">
@@ -116,11 +158,26 @@ export default function AboutPage() {
           <p className="mt-8 text-sm text-muted">Loading the bibliography…</p>
         ) : (
           <div className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {books.map((book) => (
+            {books.slice(0, 3).map((book) => (
               <BookCard key={book.slug} book={book} />
             ))}
           </div>
         )}
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+        <SectionHeading eyebrow="FAQ" title="Common questions" />
+        <div className="mt-8 divide-y divide-line border-y border-line">
+          {faq.map(({ q, a }) => (
+            <div
+              key={q}
+              className="grid gap-2 py-5 sm:grid-cols-[minmax(0,22rem)_1fr] sm:gap-8"
+            >
+              <h3 className="text-base font-semibold">{q}</h3>
+              <p className="text-sm leading-relaxed text-muted">{a}</p>
+            </div>
+          ))}
+        </div>
       </section>
     </>
   );

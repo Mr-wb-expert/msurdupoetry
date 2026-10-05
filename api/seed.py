@@ -38,7 +38,7 @@ SEED_BOOKS = [
             "read in full online or download as a PDF, free of charge."
         ),
         "pdf_url": "https://drive.google.com/file/d/1L00osyWDKYZFbT4bMrYxjpaDDtxD7YBv/view",
-        "cover_image": "/images/magar-manzar-nahi-mera.png",
+        "cover_image": "/images/magar-manzar-nahi-mera.webp",
         "category": "poetry",
         "author": "Mujahid Sajjad",
         "published_year": 2026,
@@ -55,7 +55,7 @@ SEED_BOOKS = [
             "students of Urdu poetry will find it useful alongside the poems themselves."
         ),
         "pdf_url": "https://drive.google.com/file/d/1AN6iPEFLu2960HJJFQDtBAzv7sUBgKZd/view",
-        "cover_image": "/images/Article of Ghazala Anjum on the Poetry collection of Mujahid Sajjad.png",
+        "cover_image": "/images/article-on-the-poetry-of-mujahid-sajjad.webp",
         "category": "criticism",
         "author": "Ghazala Anjum",
         "published_year": 2026,
@@ -72,7 +72,7 @@ SEED_BOOKS = [
             "read online or download as a PDF."
         ),
         "pdf_url": "https://drive.google.com/file/d/1jhbyT_cVtr59vFO33kU6IHm8AeLaF-hA/view",
-        "cover_image": "/images/the-listening-eye-the-seeing-heart.png",
+        "cover_image": "/images/the-listening-eye-the-seeing-heart.webp",
         "category": "other",
         "author": "Dr Syed Shabih ul Hassan Rizvi",
         "published_year": 2026,
@@ -114,6 +114,14 @@ def _add_missing_columns() -> None:
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE poems ADD COLUMN type VARCHAR(16)"))
         print("added poems.type")
+
+    if "poems" in tables and "author" not in {
+        c["name"] for c in inspector.get_columns("poems")
+    }:
+        # Same reasoning as type: nullable so old rows keep loading.
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE poems ADD COLUMN author VARCHAR(200)"))
+        print("added poems.author")
 
     if "books" in tables and "created_at" not in {
         c["name"] for c in inspector.get_columns("books")

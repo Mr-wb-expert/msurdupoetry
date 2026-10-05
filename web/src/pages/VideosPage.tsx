@@ -25,6 +25,12 @@ export default function VideosPage() {
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
           <p className="eyebrow">Watch</p>
           <h1 className="mt-3 text-4xl sm:text-5xl">Videos</h1>
+          <p className="mt-4 max-w-2xl leading-relaxed text-muted">
+            Readings, mushaira recordings and interviews with the poetry of Syed
+            Mujahid Sajjad — ghazals and nazms recited in his own voice and by
+            fellow poets. New recordings are added here as they appear on the
+            channel.
+          </p>
         </div>
       </section>
 

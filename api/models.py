@@ -55,6 +55,9 @@ class Poem(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     slug: Mapped[str] = mapped_column(String(160), unique=True, index=True)
     title: Mapped[str] = mapped_column(String(300))
+    # Null only for a row written before this field existed; the admin form
+    # always sends one.
+    author: Mapped[str | None] = mapped_column(String(200), nullable=True)
     body: Mapped[str] = mapped_column(Text, default="")
     # Ghazal, Nazm or Poem. Nullable so rows written before this field existed
     # keep loading; the admin form always sends one.

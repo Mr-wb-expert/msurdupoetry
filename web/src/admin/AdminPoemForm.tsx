@@ -4,11 +4,12 @@ import { Save } from "lucide-react";
 
 import { ErrorNote, Loading } from "@/components/Feedback.tsx";
 import { errorMessage } from "./useAuth.ts";
+import SaveDialog from "./SaveDialog.tsx";
 import { createPoem, getPoem, updatePoem } from "@/lib/api.ts";
 import { useApi } from "@/lib/useApi.ts";
 import { VERSE_TYPES, type VerseType } from "@/lib/types";
 
-type Draft = { slug: string; title: string; body: string; type: VerseType };
+type Draft = { slug: string; title: string; author: string; body: string; type: VerseType };
 
 export default function AdminPoemForm() {
   const { slug = "" } = useParams();
@@ -16,16 +17,26 @@ export default function AdminPoemForm() {
   const navigate = useNavigate();
 
   const existing = useApi(() => getPoem(slug), [slug], !isNew);
-  const [draft, setDraft] = useState<Draft>({ slug: "", title: "", body: "", type: "Ghazal" });
+  const [draft, setDraft] = useState<Draft>({
+    slug: "",
+    title: "",
+    author: "Mujahid Sajjad",
+    body: "",
+    type: "Ghazal",
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  // Set once a create succeeds, so a second Save updates instead of creating
+  // the verse twice (the URL stays /new until the dialog's own button is used).
+  const [createdSlug, setCreatedSlug] = useState<string | null>(null);
 
   useEffect(() => {
     if (existing.data) {
       setDraft({
         slug: existing.data.slug,
         title: existing.data.title,
+        author: existing.data.author ?? "",
         body: existing.data.body,
         type: existing.data.type ?? "Ghazal",
       });
@@ -44,13 +55,18 @@ export default function AdminPoemForm() {
     try {
       const payload = {
         title: draft.title,
+        author: draft.author.trim(),
         body: draft.body,
         type: draft.type,
         ...(draft.slug.trim() ? { slug: draft.slug.trim() } : {}),
       };
-      const result = isNew ? await createPoem(payload) : await updatePoem(slug, payload);
+      const result = createdSlug
+        ? await updatePoem(createdSlug, payload)
+        : isNew
+          ? await createPoem(payload)
+          : await updatePoem(slug, payload);
+      if (isNew && !createdSlug) setCreatedSlug(result.slug);
       setSaved(true);
-      navigate(`/admin/poems/${result.slug}`, { replace: true });
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
@@ -92,6 +108,23 @@ export default function AdminPoemForm() {
             onChange={(event) => set("title", event.target.value)}
             className="field urdu-display"
           />
+        </div>
+
+        <div>
+          <label htmlFor="poem-author" className="field-label">
+            Author
+          </label>
+          <input
+            id="poem-author"
+            required
+            value={draft.author}
+            onChange={(event) => set("author", event.target.value)}
+            className="field"
+          />
+          <p className="field-hint">
+            Shown on the poem&apos;s page and its search listing. Leave as Mujahid Sajjad unless
+            the verse is someone else&apos;s.
+          </p>
         </div>
 
         <div>
@@ -153,11 +186,6 @@ export default function AdminPoemForm() {
             {error}
           </p>
         )}
-        {saved && !error && (
-          <p role="status" className="text-sm font-medium text-teal-700">
-            Saved.
-          </p>
-        )}
 
         <div className="flex flex-wrap gap-3 border-t border-line pt-6">
           <button type="submit" disabled={busy} className="btn btn-primary">
@@ -169,6 +197,19 @@ export default function AdminPoemForm() {
           </Link>
         </div>
       </form>
+
+      {/* Save result: a styled dialog instead of window.alert. */}
+      {saved && !error && (
+        <SaveDialog
+          title="Verse saved"
+          message="Your verse has been saved."
+          primaryLabel="Go to Verses"
+          onPrimary={() => navigate("/admin/poems", { replace: true })}
+          secondaryLabel={isNew ? undefined : "Keep editing"}
+          onSecondary={() => setSaved(false)}
+          onDismiss={() => setSaved(false)}
+        />
+      )}
     </div>
   );
 }

@@ -180,9 +180,16 @@ check(
 )
 
 r = client.post(
-    "/api/admin/poems", json={"title": "Nazm", "body": "x", "type": "Nazm"}
+    "/api/admin/poems",
+    json={"title": "Nazm", "body": "x", "type": "Nazm", "author": "Ghazala Anjum"},
 )
-check("verse type round-trips", r.status_code == 201 and r.json()["type"] == "Nazm", r.text)
+check(
+    "verse type and author round-trips",
+    r.status_code == 201
+    and r.json()["type"] == "Nazm"
+    and r.json()["author"] == "Ghazala Anjum",
+    r.text,
+)
 r = client.post("/api/admin/poems", json={"title": "Bad", "body": "x", "type": "Ode"})
 check("unknown verse type rejected", r.status_code == 422, r.text)
 r = client.delete("/api/admin/poems/nazm")
@@ -472,15 +479,15 @@ if DIST.is_dir():
     home = client.get("/").text
     check(
         "home title targets the head keywords",
-        "<title>Urdu Poetry &amp; Urdu Shayari — Mujahid Sajjad</title>" in home,
+        "<title>Urdu Poetry &amp; Shayari, Free Books Online — Mujahid Sajjad</title>" in home,
         home[:300],
     )
     check("home ships a canonical", 'rel="canonical" href="' in home, home[:300])
     check("home ships og:url", 'property="og:url"' in home, home[:300])
     check("home ships WebSite schema", '"@type":"WebSite"' in home, home[:300])
     check(
-        "home shares the author image",
-        'property="og:image" content="' in home and "author.jpeg" in home,
+        "home shares the brand card",
+        'property="og:image" content="' in home and "og-cover.png" in home,
         home[:400],
     )
 
@@ -523,6 +530,16 @@ if DIST.is_dir():
         "about title names the college city",
         "<title>Urdu Poet at GGC Burewala — Mujahid Sajjad</title>" in about,
         about[:300],
+    )
+    check(
+        "about ships FAQPage schema",
+        '"@type":"FAQPage"' in about and '"@type":"Question"' in about,
+        about[:600],
+    )
+    check(
+        "about shares the brand card",
+        "og-cover.png" in about,
+        about[:400],
     )
     check(
         "home description names the college",

@@ -107,8 +107,9 @@ export default function BooksPage() {
       </div>
 
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        {/* Filter and sort bar. */}
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-4 border-b border-line pb-5">
+        {/* Filter and sort bar. Mobile stacks the two groups so Sort is not
+            left floating on a row of its own; sm+ keeps one line. */}
+        <div className="flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-center sm:gap-x-6">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted">
               Category
@@ -122,7 +123,7 @@ export default function BooksPage() {
                 className={`min-h-9 rounded-full px-3.5 text-sm font-medium transition-colors ${
                   category === value
                     ? "bg-maroon-700 text-paper"
-                    : "border border-line text-ink-800 hover:border-ink-900"
+                    : "border border-line text-ink-800 hover:border-ink-900 hover:text-ink-900"
                 }`}
               >
                 {value === "all" ? "All" : categoryLabels[value]}
@@ -130,7 +131,7 @@ export default function BooksPage() {
             ))}
           </div>
 
-          <div className="ms-auto flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:ms-auto">
             <label htmlFor="sort" className="text-xs font-semibold uppercase tracking-wider text-muted">
               Sort
             </label>

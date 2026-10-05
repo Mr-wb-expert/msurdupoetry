@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import Seo from "@/components/Seo.tsx";
 import { EmptyNote } from "@/components/Feedback.tsx";
 import CoupletCard from "@/components/CoupletCard.tsx";
-import { couplets, fromPoem } from "@/lib/couplets";
+import { fromPoem } from "@/lib/couplets";
 import { VERSE_TYPES, type VerseType } from "@/lib/types";
 import { getPoems } from "@/lib/api.ts";
 import { useApi } from "@/lib/useApi.ts";
@@ -24,13 +24,10 @@ const filters: { key: Filter; label: string }[] = [
 export default function PoemsPage() {
   const [filter, setFilter] = useState<Filter>("All");
   const [query, setQuery] = useState("");
-  // Verses written in the admin join the transcribed ones from the book.
+  // The list is whatever the admin has saved — nothing is hardcoded here.
   const added = useApi(getPoems);
 
-  const verses = useMemo(
-    () => [...(added.data ?? []).map(fromPoem), ...couplets],
-    [added.data],
-  );
+  const verses = useMemo(() => (added.data ?? []).map(fromPoem), [added.data]);
 
   const needle = query.trim().toLowerCase();
   const byType = (type: VerseType) => verses.filter((couplet) => couplet.type === type).length;
@@ -46,7 +43,7 @@ export default function PoemsPage() {
         (couplet) =>
           (filter === "All" || couplet.type === filter) &&
           (!needle ||
-            `${couplet.couplet} ${couplet.title ?? ""} ${couplet.bookName ?? ""}`
+            `${couplet.couplet} ${couplet.title}`
               .toLowerCase()
               .includes(needle)),
       ),

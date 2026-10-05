@@ -43,7 +43,10 @@ export default function BookPage() {
       {/* Title pattern mirrored in api/seo.py. */}
       <Seo
         title={`${item.title} — ${BOOK_KIND[item.category]}`}
-        description={item.description.slice(0, 300)}
+        description={
+          item.description.trim().slice(0, 300) ||
+          `Read ${item.title} by ${site.fullName} — free online and as a PDF.`
+        }
         image={item.coverImage}
         jsonLd={[
           {
@@ -57,7 +60,7 @@ export default function BookPage() {
             ...(item.coverImage && { image: item.coverImage }),
             ...(item.publishedYear && { datePublished: String(item.publishedYear) }),
             ...(item.pages && { numberOfPages: item.pages }),
-            offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
+            offers: { "@type": "Offer", price: "0", priceCurrency: "PKR" },
           },
           // Mirrors the breadcrumb under it, which is what turns the trail
           // into a rich result instead of plain blue links.

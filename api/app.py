@@ -58,10 +58,21 @@ from fastapi.responses import FileResponse, Response  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
-from api.db import get_db  # noqa: E402
+from api.db import Base, engine, get_db  # noqa: E402
 from api.models import Poem  # noqa: E402
 from api.routes import MEDIA_DIR, _books_query, admin, public, public_review  # noqa: E402
 from api import seo  # noqa: E402
+from api.seed import _add_missing_columns  # noqa: E402
+
+# `create_all` only ever creates, so `_add_missing_columns` is what keeps an
+# existing database in step with the models — a column added later is silently
+# absent from it, and every insert then 500s. Runs here, not only in
+# `python -m api.seed`, so a deploy or a --reload restart migrates the database
+# it is about to serve.
+# ponytail: check-then-alter races two simultaneous cold starts; the loser
+# fails its import once and succeeds on retry, against the migrated schema.
+Base.metadata.create_all(engine)
+_add_missing_columns()
 
 DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
 SITE_URL = os.environ.get("SITE_URL", "").rstrip("/")

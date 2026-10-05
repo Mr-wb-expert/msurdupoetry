@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.alias_generators import to_camel
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-CATEGORIES = {"poetry", "criticism", "essays", "research", "other"}
+CATEGORIES = {"poetry", "ghazal", "criticism", "essays", "research", "other"}
 # The URL shapes YouTube actually hands out: watch?v= (extra params allowed),
 # youtu.be/, /shorts/ and /embed/. A video id is exactly 11 word characters.
 YOUTUBE_RE = re.compile(
@@ -111,11 +111,12 @@ class PoemBase(WireModel):
     # Null only for a row read from before the field existed; a write without
     # it lands on the same default the form starts on.
     type: Literal["Ghazal", "Nazm", "Poem"] | None = "Ghazal"
+    author: str | None = Field(default="", max_length=200)
 
-    @field_validator("title", "body")
+    @field_validator("title", "body", "author")
     @classmethod
-    def _strip(cls, v: str) -> str:
-        return v.strip()
+    def _strip(cls, v: str | None) -> str | None:
+        return v.strip() if v else v
 
 
 class PoemCreate(PoemBase):

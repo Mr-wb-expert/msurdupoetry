@@ -11,7 +11,7 @@ import { EmptyNote, ErrorNote, Loading } from "@/components/Feedback.tsx";
 import { site } from "@/lib/site";
 import { useApi } from "@/lib/useApi.ts";
 import { getBooks, getPoems, getReviews, getVideos } from "@/lib/api.ts";
-import { couplets, fromPoem } from "@/lib/couplets";
+import { fromPoem } from "@/lib/couplets";
 import { youtubeId } from "@/lib/videos";
 import { categoryLabels, type Book, type Review } from "@/lib/types";
 
@@ -22,12 +22,12 @@ export default function HomePage() {
   const videos = useApi(getVideos);
 
   const books = library.data ?? [];
-  const verseCount = (poems.data?.length ?? 0) + couplets.length;
+  const verseCount = poems.data?.length ?? 0;
 
   // Three random verses per visit: reshuffled on the next page load, stable
   // while the visitor stays (Fisher-Yates, then the first three).
   const poetryPreview = useMemo(() => {
-    const pool = [...(poems.data ?? []).map(fromPoem), ...couplets];
+    const pool = (poems.data ?? []).map(fromPoem);
     for (let i = pool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       const a = pool[i]!;
@@ -73,19 +73,13 @@ export default function HomePage() {
       {/* Titles/descriptions mirror api/seo.py — change both, or the
           pre-hydration head and the settled one disagree. */}
       <Seo
-        title="Urdu Poetry & Urdu Shayari"
+        title="Urdu Poetry & Shayari, Free Books Online"
         description="Read the Urdu poetry of Mujahid Sajjad, Urdu poet and Associate Professor at Govt. Graduate College Burewala. Free ghazals, nazms and books online."
-        image={site.portrait}
         jsonLd={{
           "@context": "https://schema.org",
+          // Person lives in index.html — repeating it here would put two
+          // Person nodes in the document after hydration.
           "@graph": [
-            {
-              "@type": "Person",
-              name: site.fullName,
-              jobTitle: site.title,
-              worksFor: { "@type": "CollegeOrUniversity", name: site.affiliation },
-              image: site.portrait,
-            },
             {
               "@type": "WebSite",
               name: site.author,
@@ -102,7 +96,7 @@ export default function HomePage() {
           <div>
             <p className="eyebrow eyebrow-sentence">Books, free to read</p>
             <h1 className="mt-4 text-5xl leading-[1.05] sm:text-6xl">
-              The Literary World of Syed Mujahid Sajjad
+              Urdu Poetry &amp; Shayari by Syed Mujahid Sajjad
             </h1>
             <p className="mt-5 max-w-xl text-lg text-muted">{site.description}</p>
 
@@ -128,7 +122,9 @@ export default function HomePage() {
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wider text-muted">Verses</dt>
-                <dd className="text-lg font-semibold">{verseCount} · Free to read</dd>
+                <dd className="text-lg font-semibold">
+                  {verseCount ? `${verseCount} · Free to read` : "Free to read"}
+                </dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wider text-muted">Reading</dt>

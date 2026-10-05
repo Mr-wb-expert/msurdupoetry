@@ -4,6 +4,7 @@ import { Save } from "lucide-react";
 
 import { ErrorNote, Loading } from "@/components/Feedback.tsx";
 import { errorMessage } from "./useAuth.ts";
+import SaveDialog from "./SaveDialog.tsx";
 import { createVideo, getVideos, updateVideo } from "@/lib/api.ts";
 import { useApi } from "@/lib/useApi.ts";
 
@@ -23,6 +24,10 @@ export default function AdminVideoForm() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  // Videos are keyed by id, not slug: once a create succeeds its id is kept
+  // here so a second Save updates instead of adding a duplicate row (the URL
+  // stays /new until the dialog's own button is used).
+  const [createdId, setCreatedId] = useState<number | null>(null);
 
   useEffect(() => {
     if (found) setDraft({ url: found.url, description: found.description });
@@ -39,9 +44,13 @@ export default function AdminVideoForm() {
     setError(null);
     try {
       const payload = { url: draft.url.trim(), description: draft.description.trim() };
-      if (isNew) await createVideo(payload);
-      else await updateVideo(numericId, payload);
-      navigate("/admin/videos", { replace: true });
+      const result = createdId
+        ? await updateVideo(createdId, payload)
+        : isNew
+          ? await createVideo(payload)
+          : await updateVideo(numericId, payload);
+      if (isNew && !createdId) setCreatedId(result.id);
+      setSaved(true);
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
@@ -106,11 +115,6 @@ export default function AdminVideoForm() {
             {error}
           </p>
         )}
-        {saved && !error && (
-          <p role="status" className="text-sm font-medium text-teal-700">
-            Saved.
-          </p>
-        )}
 
         <div className="flex flex-wrap gap-3 border-t border-line pt-6">
           <button type="submit" disabled={busy} className="btn btn-primary">
@@ -122,6 +126,19 @@ export default function AdminVideoForm() {
           </Link>
         </div>
       </form>
+
+      {/* Save result: a styled dialog instead of window.alert. */}
+      {saved && !error && (
+        <SaveDialog
+          title="Video saved"
+          message="Your video has been saved."
+          primaryLabel="Go to Videos"
+          onPrimary={() => navigate("/admin/videos", { replace: true })}
+          secondaryLabel={isNew ? undefined : "Keep editing"}
+          onSecondary={() => setSaved(false)}
+          onDismiss={() => setSaved(false)}
+        />
+      )}
     </div>
   );
 }

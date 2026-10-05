@@ -28,3 +28,6 @@ web/dist/
 .server.log
 .env.vercel
 
+# Scratch proofreading file, not site source
+POEMS-PROOFREAD.txt
+

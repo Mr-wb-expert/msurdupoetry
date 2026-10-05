@@ -30,7 +30,9 @@ type MetaSelector =
   | 'meta[property="og:url"]'
   | 'meta[property="og:type"]'
   | 'meta[property="og:site_name"]'
-  | 'meta[name="twitter:card"]';
+  | 'meta[name="twitter:card"]'
+  | 'meta[name="twitter:title"]'
+  | 'meta[name="twitter:description"]';
 
 /** Writes a meta tag, creating it the first time that page needs one. */
 function setMeta(selector: MetaSelector, value: string) {
@@ -46,6 +48,11 @@ function setMeta(selector: MetaSelector, value: string) {
     document.head.appendChild(element);
   }
   element.setAttribute("content", value);
+}
+
+/** Drops a tag the current page no longer wants, so nothing goes stale. */
+function removeMeta(selector: MetaSelector) {
+  document.head.querySelector(selector)?.remove();
 }
 
 /** Points <link rel="canonical"> at this page, creating it if needed. */
@@ -83,11 +90,21 @@ export default function Seo({
       setMeta('meta[property="og:description"]', description);
     }
     setMeta('meta[name="robots"]', noIndex ? "noindex, nofollow" : "index, follow");
-    if (image) {
+    // Public pages default to the branded share card — matching api/seo.py —
+    // so navigating away from a page that had an image cannot leave it behind.
+    const shareImage = noIndex ? null : (image ?? "/images/og-cover.png");
+    if (shareImage) {
       // Social crawlers never resolve a site-relative image, so it is made
       // absolute here, where the origin is known.
-      setMeta('meta[property="og:image"]', new URL(image, window.location.origin).href);
+      setMeta('meta[property="og:image"]', new URL(shareImage, window.location.origin).href);
       setMeta('meta[name="twitter:card"]', "summary_large_image");
+    } else {
+      removeMeta('meta[property="og:image"]');
+      removeMeta('meta[name="twitter:card"]');
+    }
+    setMeta('meta[name="twitter:title"]', document.title);
+    if (description) {
+      setMeta('meta[name="twitter:description"]', description);
     }
 
     // One script tag, rewritten in place. Leaking the previous page's schema
