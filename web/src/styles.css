@@ -37,8 +37,12 @@
     --color-teal-600: #0f6f6a;
     --color-teal-700: #0b524f;
 
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, sans-serif;
+  /* Nastaliq sits right after Inter so any Urdu-script glyph anywhere —
+     book titles, descriptions, reviews, inputs — falls back to the same
+     face the verse tab uses, per character. Must precede system fonts,
+     which ship their own Arabic faces. */
+  --font-sans: "Inter Variable", "Noto Nastaliq Urdu", ui-sans-serif,
+    system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   /* Nastaliq needs far more vertical room than a Latin face: the glyphs
      stack diagonally and descend. These metrics are the reason the Urdu
