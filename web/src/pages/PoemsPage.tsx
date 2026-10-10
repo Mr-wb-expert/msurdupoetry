@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 
 import Seo from "@/components/Seo.tsx";
-import { EmptyNote } from "@/components/Feedback.tsx";
+import { EmptyNote, ErrorNote, Loading } from "@/components/Feedback.tsx";
 import CoupletCard from "@/components/CoupletCard.tsx";
 import { fromPoem } from "@/lib/couplets";
 import { VERSE_TYPES, type VerseType } from "@/lib/types";
@@ -65,7 +65,9 @@ export default function PoemsPage() {
           <p className="mt-4 max-w-2xl text-lg text-muted">
             Ghazal and nazm couplets, set in the Nastaliq they were written in.
           </p>
-          <p className="mt-3 text-sm text-muted">{counts}</p>
+          {/* Nothing to count until the fetch answers — "0 verses" while the
+              request is in flight reads like an empty site. */}
+          {added.data && <p className="mt-3 text-sm text-muted">{counts}</p>}
 
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <div role="tablist" aria-label="Filter couplets" className="flex flex-wrap gap-2">
@@ -105,7 +107,11 @@ export default function PoemsPage() {
       </div>
 
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        {verses.length === 0 ? (
+        {added.loading && !added.data ? (
+          <Loading label="Loading verses" />
+        ) : added.error && !added.data ? (
+          <ErrorNote message={added.error} onRetry={added.reload} />
+        ) : verses.length === 0 ? (
           <EmptyNote title="No verses yet">
             Verses will appear here as they are added.
           </EmptyNote>
