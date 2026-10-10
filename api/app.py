@@ -88,6 +88,27 @@ app.include_router(public, prefix="/api")
 app.include_router(public_review, prefix="/api")
 app.include_router(admin, prefix="/api")
 
+
+# Public reads barely change and every visitor used to hit Neon for them.
+# max-age keeps repeat visits in the browser; s-maxage lets Vercel's edge hold
+# the response for five minutes, so the database is touched on a miss only.
+# Admin routes are private and /health must answer freshly, so both are left
+# out; non-GETs never reach this branch.
+@app.middleware("http")
+async def cache_public_reads(request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if (
+        request.method == "GET"
+        and path.startswith("/api/")
+        and not path.startswith("/api/admin")
+        and path != "/api/health"
+    ):
+        response.headers["Cache-Control"] = (
+            "public, max-age=60, s-maxage=300, stale-while-revalidate=600"
+        )
+    return response
+
 # Uploaded covers, served from their database row: the production filesystem
 # is read-only and ephemeral, so a file written there could never be kept or
 # read back (the 500 the admin saw on every upload).
