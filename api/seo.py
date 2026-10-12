@@ -18,6 +18,7 @@ import re
 from urllib.parse import quote
 
 from api.models import Book, Poem
+from api.poets import by_slug
 
 SITE_NAME = "Mujahid Sajjad"
 FULL_NAME = "Prof. Syed Mujahid Sajjad"
@@ -38,6 +39,11 @@ PAGE_COPY = {
         "Urdu Poems & Shayari — Ghazals, Nazms",
         "Read Urdu shayari by Mujahid Sajjad — ghazal and nazm couplets in Urdu, "
         "free to read and share.",
+    ),
+    "poets": (
+        "Urdu Poets & Authors — Faiz, Jaun Elia, Mohsin Naqvi",
+        "The poets whose verses live on this site — Faiz Ahmed Faiz, Jaun Elia, "
+        "Mohsin Naqvi and Mujahid Sajjad. Read their ghazals and nazms in Urdu, free.",
     ),
     "videos": (
         "Urdu Poetry Videos",
@@ -220,6 +226,24 @@ def head(path: str, db, origin: str) -> dict:
                     "inLanguage": "ur",
                 },
                 _breadcrumb("Verses", "poems", poem.title, path, origin),
+            ]
+
+    elif path.startswith("poets/"):
+        poet = by_slug(path.removeprefix("poets/"))
+        if poet is None:
+            noindex = True
+        else:
+            title = f"{poet['urdu']} — Urdu Poet"
+            description = " ".join(poet["bio"].split())[:160]
+            graph = [
+                {
+                    "@context": "https://schema.org",
+                    "@type": "Person",
+                    "name": f"{poet['urdu']} ({poet['name']})",
+                    "url": f"{origin}/poets/{poet['slug']}",
+                    "description": poet["bio"],
+                },
+                _breadcrumb("Poets", "poets", poet["urdu"], path, origin),
             ]
 
     if title is None:

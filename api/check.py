@@ -355,6 +355,41 @@ check("deleting a removed review is a 404", r.status_code == 404, r.text)
 r = client.delete("/api/admin/poems/first-poem")
 check("poem deleted", r.status_code == 200 and client.get("/api/poems").json() == [], r.text)
 
+print("poets")
+r = client.get("/api/poets")
+rows = r.json()
+check("poets index served", r.status_code == 200 and len(rows) >= 4, r.text)
+check(
+    "poet fields come back camelCase with urdu name",
+    rows and "poemCount" in rows[0] and "urdu" in rows[0],
+    r.text,
+)
+r = client.get("/api/poets/not-a-poet")
+check("unknown poet is a 404", r.status_code == 404, r.text)
+
+created = client.post(
+    "/api/admin/poems",
+    json={"title": "Hub Poem", "body": "a sher\nwith two lines", "author": "Faiz Ahmed Faiz"},
+)
+check("poem by a real poet accepted", created.status_code == 201, created.text)
+
+detail = client.get("/api/poets/faiz-ahmed-faiz")
+check(
+    "poet detail carries its verses",
+    detail.status_code == 200
+    and detail.json()["poemCount"] == 1
+    and len(detail.json()["poems"]) == 1
+    and detail.json()["urdu"] == "فیض احمد فیض",
+    detail.text[:300],
+)
+counts = {p["slug"]: p["poemCount"] for p in client.get("/api/poets").json()}
+check(
+    "poets index counts only that poet",
+    counts.get("faiz-ahmed-faiz", 0) == 1 and counts.get("mohsin-naqvi", -1) == 0,
+    str(counts),
+)
+client.delete("/api/admin/poems/hub-poem")
+
 print("contact")
 message = {
     "name": "A Reader",
@@ -568,6 +603,24 @@ if DIST.is_dir():
         '<meta name="robots" content="noindex, nofollow">' in missing.text,
         missing.text[:400],
     )
+
+    poets_index = client.get("/poets")
+    check(
+        "poets page is a 200 with its own title",
+        poets_index.status_code == 200
+        and "<title>Urdu Poets &amp; Authors — Faiz, Jaun Elia, Mohsin Naqvi — Mujahid Sajjad</title>"
+        in poets_index.text,
+        poets_index.text[:300],
+    )
+    poet_page = client.get("/poets/faiz-ahmed-faiz")
+    check(
+        "poet page ships Person schema with the urdu name",
+        poet_page.status_code == 200
+        and '"@type":"Person"' in poet_page.text
+        and "فیض احمد فیض" in poet_page.text,
+        poet_page.text[:400],
+    )
+    check("unknown poet is a 404", client.get("/poets/not-a-real-poet").status_code == 404)
 
 print(f"api check: {passed} assertions passed")
 

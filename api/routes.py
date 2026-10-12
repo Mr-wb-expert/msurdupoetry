@@ -20,6 +20,7 @@ from fastapi import (
     UploadFile,
     status,
 )
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from .auth import (
@@ -32,6 +33,7 @@ from .auth import (
 )
 from .db import get_db
 from .models import Admin, Book, ContactMessage, MediaFile, Poem, Review, Video
+from .poets import POETS, by_slug
 from .schemas import (
     AdminOut,
     BookCreate,
@@ -44,6 +46,8 @@ from .schemas import (
     PoemCreate,
     PoemOut,
     PoemUpdate,
+    PoetDetail,
+    PoetOut,
     ReviewIn,
     ReviewModerationIn,
     ReviewOut,
@@ -168,6 +172,47 @@ def read_poem(slug: str, db: Session = Depends(get_db)):
     if poem is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     return poem
+
+
+@public.get("/poets", response_model=list[PoetOut])
+def list_poets(db: Session = Depends(get_db)):
+    counts: dict[str, int] = {
+        author or "": total
+        for author, total in db.query(Poem.author, func.count(Poem.id))
+        .group_by(Poem.author)
+        .all()
+    }
+    return [
+        PoetOut(
+            slug=poet["slug"],
+            name=poet["name"],
+            urdu=poet["urdu"],
+            bio=poet["bio"],
+            poem_count=sum(counts.get(alias, 0) for alias in poet["aliases"]),
+        )
+        for poet in POETS
+    ]
+
+
+@public.get("/poets/{slug}", response_model=PoetDetail)
+def read_poet(slug: str, db: Session = Depends(get_db)):
+    poet = by_slug(slug)
+    if poet is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    poems = (
+        db.query(Poem)
+        .filter(Poem.author.in_(poet["aliases"]))
+        .order_by(Poem.created_at.desc())
+        .all()
+    )
+    return PoetDetail(
+        slug=poet["slug"],
+        name=poet["name"],
+        urdu=poet["urdu"],
+        bio=poet["bio"],
+        poem_count=len(poems),
+        poems=poems,
+    )
 
 
 @public.get("/videos", response_model=list[VideoOut])

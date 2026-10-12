@@ -60,6 +60,7 @@ from sqlalchemy.orm import Session  # noqa: E402
 
 from api.db import Base, engine, get_db  # noqa: E402
 from api.models import MediaFile, Poem  # noqa: E402
+from api.poets import POETS  # noqa: E402
 from api.routes import _books_query, admin, public, public_review  # noqa: E402
 from api import seo  # noqa: E402
 from api.seed import _add_missing_columns  # noqa: E402
@@ -111,7 +112,9 @@ async def cache_public_reads(request, call_next):
         and path != "/api/health"
     ):
         single_read = path.count("/") == 3 and (
-            path.startswith("/api/poems/") or path.startswith("/api/books/")
+            path.startswith("/api/poems/")
+            or path.startswith("/api/poets/")
+            or path.startswith("/api/books/")
         )
         response.headers["Cache-Control"] = (
             "no-store" if single_read else "public, max-age=60, s-maxage=60, stale-while-revalidate=60"
@@ -129,7 +132,7 @@ def serve_media(name: str, db: Session = Depends(get_db)) -> Response:
     return Response(content=row.data, media_type=row.content_type)
 
 # Pages that always exist. The catalogue entries are added below.
-STATIC_PAGES = ["", "books", "poems", "videos", "about"]
+STATIC_PAGES = ["", "books", "poems", "poets", "videos", "about"]
 
 
 @app.get("/sitemap.xml", include_in_schema=False)
@@ -140,6 +143,7 @@ def sitemap(db: Session = Depends(get_db)) -> Response:
     urls = list(STATIC_PAGES)
     urls += [f"books/{book.slug}" for book in _books_query(db).all()]
     urls += [f"poems/{poem.slug}" for poem in db.query(Poem).order_by(Poem.created_at.desc()).all()]
+    urls += [f"poets/{poet['slug']}" for poet in POETS]
 
     body = "".join(
         f"<url><loc>{escape(origin)}/{escape(path)}</loc>"
@@ -207,6 +211,7 @@ if DIST.is_dir():
         known = set(STATIC_PAGES) | {"admin"}
         known.update(f"books/{book.slug}" for book in _books_query(db).all())
         known.update(f"poems/{poem.slug}" for poem in db.query(Poem).all())
+        known.update(f"poets/{poet['slug']}" for poet in POETS)
         meta = seo.head(path, db, SITE_URL or "http://localhost:8000")
         return Response(
             content=seo.apply(_SHELL, meta),

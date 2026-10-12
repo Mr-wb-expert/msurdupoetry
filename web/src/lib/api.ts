@@ -7,7 +7,7 @@
  * rather than a missing option.
  */
 
-import type { Book, Poem, Review, Video } from "./types.ts";
+import type { Book, Poem, Poet, PoetDetail, Review, Video } from "./types.ts";
 
 const BASE = "/api";
 
@@ -69,6 +69,8 @@ export const getBook = (slug: string) =>
   readOrNull<Book>(`/books/${encodeURIComponent(slug)}`);
 export const getPoems = (fresh = false) =>
   request<Poem[]>(`/poems${fresh ? `?t=${Date.now()}` : ""}`);
+export const getPoet = (slug: string) => request<PoetDetail>(`/poets/${encodeURIComponent(slug)}`);
+export const getPoets = () => request<Poet[]>("/poets");
 export const getPoem = (slug: string) =>
   readOrNull<Poem>(`/poems/${encodeURIComponent(slug)}`);
 export const getVideos = () => request<Video[]>("/videos");

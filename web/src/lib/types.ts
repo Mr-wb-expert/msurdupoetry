@@ -67,6 +67,17 @@ export type Poem = {
   createdAt: string;
 };
 
+/** One hub page in /poets. `urdu` is the display name and H1. */
+export type Poet = {
+  slug: string;
+  name: string;
+  urdu: string;
+  bio: string;
+  poemCount: number;
+};
+
+export type PoetDetail = Poet & { poems: Poem[] };
+
 export type Video = {
   id: number;
   url: string;

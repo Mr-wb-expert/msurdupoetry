@@ -16,6 +16,7 @@ export const navLinks = [
   { to: "/", label: "Home" },
   { to: "/books", label: "Books" },
   { to: "/poems", label: "Verses" },
+  { to: "/poets", label: "Poets" },
   { to: "/videos", label: "Videos" },
   { to: "/about", label: "About" },
 ] as const;

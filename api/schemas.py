@@ -138,6 +138,21 @@ class PoemOut(PoemBase):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
 
 
+class PoetOut(WireModel):
+    """The hub page a poet's verses gather under. Count is resolved server-side,
+    so the poets index does not have to download every poem to count them."""
+
+    slug: str
+    name: str
+    urdu: str
+    bio: str
+    poem_count: int
+
+
+class PoetDetail(PoetOut):
+    poems: list[PoemOut]
+
+
 class VideoIn(WireModel):
     url: str = Field(min_length=10, max_length=500)
     description: str = Field(min_length=1, max_length=500)

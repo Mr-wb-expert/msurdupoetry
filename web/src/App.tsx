@@ -10,6 +10,8 @@ import BooksPage from "./pages/BooksPage.tsx";
 import BookPage from "./pages/BookPage.tsx";
 import PoemsPage from "./pages/PoemsPage.tsx";
 import PoemPage from "./pages/PoemPage.tsx";
+import PoetsPage from "./pages/PoetsPage.tsx";
+import PoetPage from "./pages/PoetPage.tsx";
 import AboutPage from "./pages/AboutPage.tsx";
 import VideosPage from "./pages/VideosPage.tsx";
 import NotFoundPage from "./pages/NotFoundPage.tsx";
@@ -58,6 +60,8 @@ export default function App() {
             <Route path="/books/:slug" element={<BookPage />} />
             <Route path="/poems" element={<PoemsPage />} />
             <Route path="/poems/:slug" element={<PoemPage />} />
+            <Route path="/poets" element={<PoetsPage />} />
+            <Route path="/poets/:slug" element={<PoetPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/videos" element={<VideosPage />} />
             <Route path="*" element={<NotFoundPage />} />

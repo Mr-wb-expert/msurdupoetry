@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import Seo from "@/components/Seo.tsx";
 import { ErrorNote } from "@/components/Feedback.tsx";
 import { site } from "@/lib/site";
+import { poetHref } from "@/lib/poets";
 import { useApi } from "@/lib/useApi.ts";
 import { getPoem } from "@/lib/api.ts";
 import type { Poem } from "@/lib/types";
@@ -22,6 +23,8 @@ export default function PoemPage() {
   if (poem.loading || !poem.data) return <Seo title="Loading" noIndex />;
 
   const item: Poem = poem.data;
+  const authorName = item.author || site.author;
+  const authorHref = poetHref(item.author);
 
   // Mirrors the snippet rule in api/seo.py: quote the opening lines so every
   // poem page's meta description is genuinely unique.
@@ -79,7 +82,15 @@ export default function PoemPage() {
         </nav>
 
         <h1 className="mt-6 text-3xl sm:text-4xl">{item.title}</h1>
-        <p className="mt-3 text-sm text-muted">{item.author || site.author}</p>
+        <p className="mt-3 text-sm text-muted">
+          {authorHref ? (
+            <Link to={authorHref} className="hover:text-maroon-700">
+              {authorName}
+            </Link>
+          ) : (
+            authorName
+          )}
+        </p>
         {item.book && <p className="mt-1 text-sm text-muted">{item.book}</p>}
 
         <div aria-hidden="true" className="rule-accent mt-6" />
