@@ -89,11 +89,17 @@ app.include_router(public_review, prefix="/api")
 app.include_router(admin, prefix="/api")
 
 
-# Public reads barely change and every visitor used to hit Neon for them.
+# Public lists barely change and every visitor used to hit Neon for them.
 # max-age keeps repeat visits in the browser; s-maxage lets Vercel's edge hold
-# the response for five minutes, so the database is touched on a miss only.
+# the response for a minute, so the database is touched on a miss only.
 # Admin routes are private and /health must answer freshly, so both are left
 # out; non-GETs never reach this branch.
+#
+# A single-verse/book read must reflect an admin edit immediately, so those
+# are not edge-cached at all: the admin saves, then the public page (and the
+# admin form) read the fresh row. Vercel's edge cache is keyed on the URL and
+# cannot be purged from this function without a deploy token, so a stale
+# window on the lists is the cost of the caching.
 @app.middleware("http")
 async def cache_public_reads(request, call_next):
     response = await call_next(request)
@@ -104,8 +110,11 @@ async def cache_public_reads(request, call_next):
         and not path.startswith("/api/admin")
         and path != "/api/health"
     ):
+        single_read = path.count("/") == 3 and (
+            path.startswith("/api/poems/") or path.startswith("/api/books/")
+        )
         response.headers["Cache-Control"] = (
-            "public, max-age=60, s-maxage=300, stale-while-revalidate=600"
+            "no-store" if single_read else "public, max-age=60, s-maxage=60, stale-while-revalidate=60"
         )
     return response
 

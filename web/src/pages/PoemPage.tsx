@@ -23,12 +23,23 @@ export default function PoemPage() {
 
   const item: Poem = poem.data;
 
+  // Mirrors the snippet rule in api/seo.py: quote the opening lines so every
+  // poem page's meta description is genuinely unique.
+  const lines = (item.body ?? "").split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const suffix = `by ${item.author || site.author}. Urdu ${(item.type ?? "Poem").toLowerCase()} online.`;
+  const budget = Math.max(20, 155 - (item.title + " " + suffix).length);
+  const opening = lines.slice(0, 2).join(" ").slice(0, budget);
+  const description =
+    `“${opening}” ${item.title} ${suffix}${item.book ? ` From the book ${item.book}.` : ""}`;
+
   return (
     <>
       {/* Title/description pattern mirrored in api/seo.py. */}
       <Seo
         title={`${item.title} — Urdu ${item.type ?? "Poem"}`}
-        description={`Read ${item.title} by ${item.author || site.author} — an Urdu ${(item.type ?? "Poem").toLowerCase()} free online.`}
+        description={description}
         jsonLd={[
           {
             "@context": "https://schema.org",
@@ -69,6 +80,7 @@ export default function PoemPage() {
 
         <h1 className="mt-6 text-3xl sm:text-4xl">{item.title}</h1>
         <p className="mt-3 text-sm text-muted">{item.author || site.author}</p>
+        {item.book && <p className="mt-1 text-sm text-muted">{item.book}</p>}
 
         <div aria-hidden="true" className="rule-accent mt-6" />
 

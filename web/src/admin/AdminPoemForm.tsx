@@ -9,7 +9,7 @@ import { createPoem, getPoem, updatePoem } from "@/lib/api.ts";
 import { useApi } from "@/lib/useApi.ts";
 import { VERSE_TYPES, type VerseType } from "@/lib/types";
 
-type Draft = { slug: string; title: string; author: string; body: string; type: VerseType };
+type Draft = { slug: string; title: string; author: string; book: string; body: string; type: VerseType };
 
 export default function AdminPoemForm() {
   const { slug = "" } = useParams();
@@ -21,6 +21,7 @@ export default function AdminPoemForm() {
     slug: "",
     title: "",
     author: "Mujahid Sajjad",
+    book: "",
     body: "",
     type: "Ghazal",
   });
@@ -37,6 +38,7 @@ export default function AdminPoemForm() {
         slug: existing.data.slug,
         title: existing.data.title,
         author: existing.data.author ?? "",
+        book: existing.data.book ?? "",
         body: existing.data.body,
         type: existing.data.type ?? "Ghazal",
       });
@@ -56,6 +58,7 @@ export default function AdminPoemForm() {
       const payload = {
         title: draft.title,
         author: draft.author.trim(),
+        book: draft.book.trim(),
         body: draft.body,
         type: draft.type,
         ...(draft.slug.trim() ? { slug: draft.slug.trim() } : {}),
@@ -146,6 +149,22 @@ export default function AdminPoemForm() {
           </select>
           <p className="field-hint">
             Ghazal, Nazm or Poem — it picks the badge on the card and the filter it lands under.
+          </p>
+        </div>
+
+        <div>
+          <label htmlFor="poem-book" className="field-label">
+            Book
+          </label>
+          <input
+            id="poem-book"
+            value={draft.book}
+            onChange={(event) => set("book", event.target.value)}
+            placeholder="the collection it came from, optional"
+            className="field"
+          />
+          <p className="field-hint">
+            The collection the verse is from (Shayad, Gumaan ...). Shown on the poem&apos;s page.
           </p>
         </div>
 

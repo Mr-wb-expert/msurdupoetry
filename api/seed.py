@@ -123,6 +123,14 @@ def _add_missing_columns() -> None:
             connection.execute(text("ALTER TABLE poems ADD COLUMN author VARCHAR(200)"))
         print("added poems.author")
 
+    if "poems" in tables and "book" not in {
+        c["name"] for c in inspector.get_columns("poems")
+    }:
+        # The collection a verse came from. Nullable for the same reason.
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE poems ADD COLUMN book VARCHAR(120)"))
+        print("added poems.book")
+
     if "books" in tables and "created_at" not in {
         c["name"] for c in inspector.get_columns("books")
     }:

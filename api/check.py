@@ -174,13 +174,14 @@ check(
 
 r = client.post(
     "/api/admin/poems",
-    json={"title": "Nazm", "body": "x", "type": "Nazm", "author": "Ghazala Anjum"},
+    json={"title": "Nazm", "body": "x", "type": "Nazm", "author": "Ghazala Anjum", "book": "Gumaan"},
 )
 check(
-    "verse type and author round-trips",
+    "verse type, author and book round-trip",
     r.status_code == 201
     and r.json()["type"] == "Nazm"
-    and r.json()["author"] == "Ghazala Anjum",
+    and r.json()["author"] == "Ghazala Anjum"
+    and r.json()["book"] == "Gumaan",
     r.text,
 )
 r = client.post("/api/admin/poems", json={"title": "Bad", "body": "x", "type": "Ode"})
@@ -193,6 +194,18 @@ check("update applies", r.status_code == 200 and r.json()["body"] == "revised", 
 
 r = client.get("/api/poems")
 check("body change persisted", r.json()[0]["body"] == "revised", r.text)
+
+# The bundled verse file is what `python -m api.import_poems` loads; a bad
+# slug, missing body or unknown type should fail here, not on the owner's
+# first import.
+print("bundled verses")
+from api.import_poems import load_rows  # noqa: E402
+from api.schemas import SLUG_RE  # noqa: E402
+
+verses = load_rows()
+check("verse slugs are unique", len({v["slug"] for v in verses}) == len(verses))
+check("verse slugs are URL-safe", all(SLUG_RE.match(v["slug"]) for v in verses))
+check("verse data has content", len(verses) > 0)
 
 print("cover upload")
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 32

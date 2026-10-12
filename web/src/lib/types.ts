@@ -62,6 +62,8 @@ export type Poem = {
   body: string;
   /** Null only for a verse saved before the field existed. */
   type: VerseType | null;
+  /** The collection the verse came from (Shayad, Gumaan ...), blank if unknown. */
+  book: string | null;
   createdAt: string;
 };
 

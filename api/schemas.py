@@ -112,8 +112,11 @@ class PoemBase(WireModel):
     # it lands on the same default the form starts on.
     type: Literal["Ghazal", "Nazm", "Poem"] | None = "Ghazal"
     author: str | None = Field(default="", max_length=200)
+    # The collection the verse is drawn from (Shayad, Gumaan ...). Free text;
+    # blank when the source is not known.
+    book: str | None = Field(default="", max_length=120)
 
-    @field_validator("title", "body", "author")
+    @field_validator("title", "body", "author", "book")
     @classmethod
     def _strip(cls, v: str | None) -> str | None:
         return v.strip() if v else v

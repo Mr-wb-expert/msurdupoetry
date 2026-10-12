@@ -15,7 +15,10 @@ function preview(body: string): string {
 }
 
 export default function AdminPoems() {
-  const poems = useApi(getPoems);
+  // Vercel's edge holds the shared list for up to a minute; the admin must
+  // see a just-saved edit at once, so its reads bust the cache with a fresh
+  // query on every load and reload. The timestamp is a new edge cache key.
+  const poems = useApi(() => getPoems(true));
 
   return (
     <div>

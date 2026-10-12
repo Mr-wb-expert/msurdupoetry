@@ -28,6 +28,9 @@ web/dist/
 .server.log
 .env.vercel
 
+# Generated book documents and scratch lists
+output/
+
 # Scratch proofreading file, not site source
 POEMS-PROOFREAD.txt
 

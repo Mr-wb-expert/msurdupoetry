@@ -202,10 +202,15 @@ def head(path: str, db, origin: str) -> dict:
         else:
             kind = poem.type or "Poem"
             title = f"{poem.title} — Urdu {kind}"
-            description = (
-                f"Read {poem.title} by {poem.author or SITE_NAME} — an Urdu {kind.lower()} "
-                "free online."
-            )
+            # Per-poem description: quote the opening lines instead of a
+            # template, so every page's crawler signal actually differs.
+            lines = [l.strip() for l in (poem.body or "").split("\n") if l.strip()]
+            suffix = f"by {poem.author or SITE_NAME}. Urdu {kind.lower()} online."
+            budget = max(20, 155 - len(f"{poem.title} {suffix}"))
+            opening = " ".join(lines[:2])[:budget]
+            description = f"“{opening}” {poem.title} {suffix}"
+            if poem.book:
+                description += f" From the book {poem.book}."
             graph = [
                 {
                     "@context": "https://schema.org",

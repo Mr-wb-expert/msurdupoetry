@@ -62,6 +62,9 @@ class Poem(Base):
     # Ghazal, Nazm or Poem. Nullable so rows written before this field existed
     # keep loading; the admin form always sends one.
     type: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    # The collection the verse is drawn from (Shayad, Gumaan ...). Blank when
+    # unknown. Nullable for the same reason as type: old rows keep loading.
+    book: Mapped[str | None] = mapped_column(String(120), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
