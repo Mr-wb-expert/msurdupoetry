@@ -385,7 +385,8 @@ check(
 counts = {p["slug"]: p["poemCount"] for p in client.get("/api/poets").json()}
 check(
     "poets index counts only that poet",
-    counts.get("faiz-ahmed-faiz", 0) == 1 and counts.get("mohsin-naqvi", -1) == 0,
+    counts.get("faiz-ahmed-faiz", 0) == 1 and counts.get("mohsin-naqvi", -1) == 0
+    and counts.get("ahmed-faraz", -1) == 0,
     str(counts),
 )
 client.delete("/api/admin/poems/hub-poem")

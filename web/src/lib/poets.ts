@@ -9,6 +9,7 @@ const ALIASES: Record<string, string> = {
   "شہید محسن نقوی": "mohsin-naqvi",
   "Jaun Elia": "jaun-elia",
   "Faiz Ahmed Faiz": "faiz-ahmed-faiz",
+  "Ahmed Faraz": "ahmed-faraz",
   "غزالہ انجم": "ghazala-anjum",
 };
 
