@@ -12,6 +12,12 @@ const ALIASES: Record<string, string> = {
   "Ahmed Faraz": "ahmed-faraz",
   "Parveen Shakir": "parveen-shakir",
   "غزالہ انجم": "ghazala-anjum",
+  "علامہ محمد اقبال": "allama-iqbal",
+  "نذیر اکبر آبادی": "nazeer-akbarabadi",
+  "ظفر علی خان": "zafar-ali-khan",
+  "مخدوم محی الدین": "makhdoom-mohiuddin",
+  "ن م راشد": "n-m-rashid",
+  "میراجی": "meeraji",
 };
 
 /** The hub URL for an author, or null when they have no poet page. */
