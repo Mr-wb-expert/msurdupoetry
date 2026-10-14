@@ -5,16 +5,17 @@ import SiteHeader from "./components/SiteHeader.tsx";
 import SiteFooter from "./components/SiteFooter.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
 import WhatsAppButton from "./components/WhatsAppButton.tsx";
-import HomePage from "./pages/HomePage.tsx";
-import BooksPage from "./pages/BooksPage.tsx";
-import BookPage from "./pages/BookPage.tsx";
-import PoemsPage from "./pages/PoemsPage.tsx";
-import PoemPage from "./pages/PoemPage.tsx";
-import PoetsPage from "./pages/PoetsPage.tsx";
-import PoetPage from "./pages/PoetPage.tsx";
-import AboutPage from "./pages/AboutPage.tsx";
-import VideosPage from "./pages/VideosPage.tsx";
-import NotFoundPage from "./pages/NotFoundPage.tsx";
+
+const HomePage = lazy(() => import("./pages/HomePage.tsx"));
+const BooksPage = lazy(() => import("./pages/BooksPage.tsx"));
+const BookPage = lazy(() => import("./pages/BookPage.tsx"));
+const PoemsPage = lazy(() => import("./pages/PoemsPage.tsx"));
+const PoemPage = lazy(() => import("./pages/PoemPage.tsx"));
+const PoetsPage = lazy(() => import("./pages/PoetsPage.tsx"));
+const PoetPage = lazy(() => import("./pages/PoetPage.tsx"));
+const AboutPage = lazy(() => import("./pages/AboutPage.tsx"));
+const VideosPage = lazy(() => import("./pages/VideosPage.tsx"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage.tsx"));
 
 // The admin bundle is a separate download that no visitor ever needs.
 const AdminRoutes = lazy(() => import("./admin/AdminRoutes.tsx"));

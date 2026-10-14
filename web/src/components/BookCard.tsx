@@ -24,6 +24,7 @@ export default function BookCard({ book }: { book: Book }) {
             src={book.coverImage}
             alt={`Cover of ${book.title}`}
             loading="lazy"
+            decoding="async"
             width={300}
             height={400}
             className="aspect-[3/4] w-full object-cover"

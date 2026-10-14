@@ -139,6 +139,8 @@ export default function HomePage() {
               alt={`${site.fullName}, ${site.title}`}
               width={640}
               height={800}
+              fetchPriority="high"
+              decoding="async"
               className="aspect-[4/5] w-full rounded-sm object-cover shadow-cover"
             />
             <figcaption className="mt-3 text-center">
