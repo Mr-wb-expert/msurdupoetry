@@ -21,9 +21,12 @@ const filters: { key: Filter; label: string }[] = [
   ...VERSE_TYPES.map((type) => ({ key: type, label: filterLabels[type] })),
 ];
 
+const PAGE_SIZE = 24;
+
 export default function PoemsPage() {
   const [filter, setFilter] = useState<Filter>("All");
   const [query, setQuery] = useState("");
+  const [displayLimit, setDisplayLimit] = useState(PAGE_SIZE);
   // The list is whatever the admin has saved — nothing is hardcoded here.
   const added = useApi(getPoems);
 
@@ -37,7 +40,8 @@ export default function PoemsPage() {
     `${byType("Nazm")} nazms`,
     ...(byType("Poem") ? [`${byType("Poem")} poems`] : []),
   ].join(" · ");
-  const visible = useMemo(
+
+  const filtered = useMemo(
     () =>
       verses.filter(
         (couplet) =>
@@ -48,6 +52,11 @@ export default function PoemsPage() {
               .includes(needle)),
       ),
     [verses, filter, needle],
+  );
+
+  const visible = useMemo(
+    () => filtered.slice(0, displayLimit),
+    [filtered, displayLimit],
   );
 
   return (
@@ -120,13 +129,27 @@ export default function PoemsPage() {
             {needle ? "Try a different word." : "Try another filter."}
           </EmptyNote>
         ) : (
-          <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {visible.map((couplet) => (
-              <li key={couplet.id} className="flex">
-                <CoupletCard couplet={couplet} />
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {visible.map((couplet) => (
+                <li key={couplet.id} className="flex">
+                  <CoupletCard couplet={couplet} />
+                </li>
+              ))}
+            </ul>
+
+            {visible.length < filtered.length && (
+              <div className="mt-12 text-center">
+                <button
+                  type="button"
+                  onClick={() => setDisplayLimit((prev) => prev + PAGE_SIZE)}
+                  className="btn btn-secondary px-8 py-3 text-sm font-semibold shadow-sm"
+                >
+                  Load more verses ({filtered.length - visible.length} remaining)
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </>

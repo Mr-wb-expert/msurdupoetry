@@ -93,14 +93,14 @@ export default function HomePage() {
       {/* Hero: the author and the promise of the site, side by side. */}
       <section className="border-b border-line bg-cream-50">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.15fr_1fr] lg:py-24">
-          <div>
+          <div className="flex flex-col items-center text-center lg:items-start lg:text-start">
             <p className="eyebrow eyebrow-sentence">Books, free to read</p>
             <h1 className="mt-4 text-5xl leading-[1.05] sm:text-6xl">
               Urdu Poetry &amp; Shayari by Syed Mujahid Sajjad
             </h1>
             <p className="mt-5 max-w-xl text-lg text-muted">{site.description}</p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
               <Link to="/books" className="btn btn-primary">
                 Browse the library
                 <ArrowRight aria-hidden="true" className="size-4" />
@@ -113,7 +113,7 @@ export default function HomePage() {
               )}
             </div>
 
-            <dl className="mt-10 flex flex-wrap gap-x-10 gap-y-4 border-t border-line pt-6">
+            <dl className="mt-10 flex flex-wrap justify-center gap-x-10 gap-y-4 border-t border-line pt-6 lg:justify-start">
               <div>
                 <dt className="text-xs uppercase tracking-wider text-muted">Books</dt>
                 <dd className="text-lg font-semibold">

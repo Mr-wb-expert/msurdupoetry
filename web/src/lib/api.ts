@@ -21,7 +21,38 @@ export class ApiError extends Error {
   }
 }
 
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+const cache = new Map<string, CacheEntry<unknown>>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache
+
+export function clearApiCache(prefix?: string) {
+  if (!prefix) {
+    cache.clear();
+    return;
+  }
+  for (const key of cache.keys()) {
+    if (key.startsWith(prefix)) {
+      cache.delete(key);
+    }
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const isGet = !init?.method || init.method.toUpperCase() === "GET";
+  const now = Date.now();
+
+  // Return cached result if fresh
+  if (isGet && cache.has(path)) {
+    const entry = cache.get(path)!;
+    if (now - entry.timestamp < CACHE_TTL_MS) {
+      return entry.data as T;
+    }
+  }
+
   let response: Response;
   try {
     response = await fetch(`${BASE}${path}`, {
@@ -47,7 +78,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       typeof detail?.detail === "string" ? detail.detail : `Request failed (${response.status}).`,
     );
   }
-  return (await response.json()) as T;
+
+  const result = (await response.json()) as T;
+
+  // Cache successful GET responses
+  if (isGet) {
+    cache.set(path, { data: result, timestamp: now });
+  }
+
+  return result;
 }
 
 /** A missing row is an answer, not a failure, so it returns null. */
@@ -115,29 +154,50 @@ export const me = () => readOrNull<{ username: string }>("/admin/me");
 /* Admin CRUD                                                        */
 /* ---------------------------------------------------------------- */
 
-export const createBook = (payload: unknown) =>
-  request<Book>("/admin/books", { method: "POST", body: JSON.stringify(payload) });
+export const createBook = async (payload: unknown) => {
+  const res = await request<Book>("/admin/books", { method: "POST", body: JSON.stringify(payload) });
+  clearApiCache("/books");
+  return res;
+};
 
-export const updateBook = (slug: string, payload: unknown) =>
-  request<Book>(`/admin/books/${encodeURIComponent(slug)}`, {
+export const updateBook = async (slug: string, payload: unknown) => {
+  const res = await request<Book>(`/admin/books/${encodeURIComponent(slug)}`, {
     method: "PUT",
     body: JSON.stringify(payload),
   });
+  clearApiCache("/books");
+  return res;
+};
 
-export const deleteBook = (slug: string) =>
-  request<{ ok: boolean }>(`/admin/books/${encodeURIComponent(slug)}`, { method: "DELETE" });
+export const deleteBook = async (slug: string) => {
+  const res = await request<{ ok: boolean }>(`/admin/books/${encodeURIComponent(slug)}`, { method: "DELETE" });
+  clearApiCache("/books");
+  return res;
+};
 
-export const createPoem = (payload: unknown) =>
-  request<Poem>("/admin/poems", { method: "POST", body: JSON.stringify(payload) });
+export const createPoem = async (payload: unknown) => {
+  const res = await request<Poem>("/admin/poems", { method: "POST", body: JSON.stringify(payload) });
+  clearApiCache("/poems");
+  clearApiCache("/poets");
+  return res;
+};
 
-export const updatePoem = (slug: string, payload: unknown) =>
-  request<Poem>(`/admin/poems/${encodeURIComponent(slug)}`, {
+export const updatePoem = async (slug: string, payload: unknown) => {
+  const res = await request<Poem>(`/admin/poems/${encodeURIComponent(slug)}`, {
     method: "PUT",
     body: JSON.stringify(payload),
   });
+  clearApiCache("/poems");
+  clearApiCache("/poets");
+  return res;
+};
 
-export const deletePoem = (slug: string) =>
-  request<{ ok: boolean }>(`/admin/poems/${encodeURIComponent(slug)}`, { method: "DELETE" });
+export const deletePoem = async (slug: string) => {
+  const res = await request<{ ok: boolean }>(`/admin/poems/${encodeURIComponent(slug)}`, { method: "DELETE" });
+  clearApiCache("/poems");
+  clearApiCache("/poets");
+  return res;
+};
 
 export const createVideo = (payload: unknown) =>
   request<Video>("/admin/videos", { method: "POST", body: JSON.stringify(payload) });

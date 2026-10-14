@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 
 import Seo from "@/components/Seo.tsx";
-import { ErrorNote } from "@/components/Feedback.tsx";
+import { ErrorNote, Loading } from "@/components/Feedback.tsx";
 import CoupletCard from "@/components/CoupletCard.tsx";
 import { fromPoem } from "@/lib/couplets";
 import { getPoet } from "@/lib/api.ts";
@@ -17,7 +17,16 @@ export default function PoetPage() {
   const poet = useApi(() => getPoet(slug), [slug]);
 
   if (poet.error) return <PoetNotFound />;
-  if (!poet.data) return <Seo title="Loading" noIndex />;
+  if (poet.loading || !poet.data) {
+    return (
+      <>
+        <Seo title="Loading" noIndex />
+        <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
+          <Loading label="Loading poet and verses" />
+        </div>
+      </>
+    );
+  }
 
   const item = poet.data;
   const poetUrl = `${window.location.origin}/poets/${item.slug}`;

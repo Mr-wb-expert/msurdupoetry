@@ -9,6 +9,7 @@ import BookCover from "@/components/BookCover.tsx";
 import PdfReader from "@/components/PdfReader.tsx";
 import ReviewForm from "@/components/ReviewForm.tsx";
 import ReviewList from "@/components/ReviewList.tsx";
+import { Loading } from "@/components/Feedback.tsx";
 import NotFoundPage from "./NotFoundPage.tsx";
 import { downloadUrl, embedUrl, externalReadUrl, relatedBooks } from "@/lib/books";
 import { site } from "@/lib/site";
@@ -24,7 +25,16 @@ export default function BookPage() {
   const [reading, setReading] = useState(false);
 
   if (book.error) return <NotFoundPage />;
-  if (book.loading || !book.data) return <Seo title="Loading" noIndex />;
+  if (book.loading || !book.data) {
+    return (
+      <>
+        <Seo title="Loading" noIndex />
+        <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
+          <Loading label="Loading book details" />
+        </div>
+      </>
+    );
+  }
 
   const item = book.data;
   const related = relatedBooks(item, library.data ?? []);

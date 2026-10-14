@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 
 import Seo from "@/components/Seo.tsx";
-import { ErrorNote } from "@/components/Feedback.tsx";
+import { ErrorNote, Loading } from "@/components/Feedback.tsx";
 import { site } from "@/lib/site";
 import { poetHref } from "@/lib/poets";
 import { useApi } from "@/lib/useApi.ts";
@@ -20,7 +20,16 @@ export default function PoemPage() {
   const poem = useApi(() => getPoem(slug), [slug]);
 
   if (poem.error) return <PoemNotFound />;
-  if (poem.loading || !poem.data) return <Seo title="Loading" noIndex />;
+  if (poem.loading || !poem.data) {
+    return (
+      <>
+        <Seo title="Loading" noIndex />
+        <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
+          <Loading label="Loading verse" />
+        </div>
+      </>
+    );
+  }
 
   const item: Poem = poem.data;
   const authorName = item.author || site.author;

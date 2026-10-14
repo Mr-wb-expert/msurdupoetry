@@ -54,7 +54,16 @@ export default function App() {
       </a>
       <SiteHeader />
       <main id="main" tabIndex={-1} className="flex-1 outline-none">
-        <Suspense fallback={null}>
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center py-28">
+              <div className="flex items-center gap-2.5 text-sm text-muted">
+                <span className="size-4 animate-spin rounded-full border-2 border-maroon-700 border-t-transparent" />
+                Loading…
+              </div>
+            </div>
+          }
+        >
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/books" element={<BooksPage />} />
