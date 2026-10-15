@@ -59,7 +59,7 @@ from fastapi.staticfiles import StaticFiles  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
 from api.db import Base, engine, get_db  # noqa: E402
-from api.models import MediaFile, Poem  # noqa: E402
+from api.models import Book, MediaFile, Poem  # noqa: E402
 from api.poets import POETS  # noqa: E402
 from api.routes import _books_query, admin, public, public_review  # noqa: E402
 from api import seo  # noqa: E402
@@ -103,7 +103,11 @@ app.include_router(admin, prefix="/api")
 # window on the lists is the cost of the caching.
 @app.middleware("http")
 async def cache_public_reads(request, call_next):
+    import time
+    start_time = time.perf_counter()
     response = await call_next(request)
+    duration_ms = (time.perf_counter() - start_time) * 1000.0
+
     path = request.url.path
     if (
         request.method == "GET"
@@ -116,9 +120,13 @@ async def cache_public_reads(request, call_next):
             or path.startswith("/api/poets/")
             or path.startswith("/api/books/")
         )
+        # Protect database by caching public lists at edge for 3 minutes, while allowing instant reads on singles
         response.headers["Cache-Control"] = (
-            "no-store" if single_read else "public, max-age=60, s-maxage=60, stale-while-revalidate=60"
+            "no-store" if single_read else "public, max-age=180, s-maxage=180, stale-while-revalidate=120"
         )
+
+    # Diagnostic header to observe processing latency in network tab
+    response.headers["X-Response-Time"] = f"{duration_ms:.1f}ms"
     return response
 
 # Uploaded covers, served from their database row: the production filesystem
@@ -129,20 +137,64 @@ def serve_media(name: str, db: Session = Depends(get_db)) -> Response:
     row = db.get(MediaFile, name)
     if row is None:
         return Response(status_code=404)
-    return Response(content=row.data, media_type=row.content_type)
+    # Cache uploaded media at edge & browser for 7 days so it is not repeatedly
+    # read from Neon Postgres bytea column.
+    return Response(
+        content=row.data,
+        media_type=row.content_type,
+        headers={"Cache-Control": "public, max-age=604800, s-maxage=604800, stale-while-revalidate=86400"},
+    )
 
 # Pages that always exist. The catalogue entries are added below.
 STATIC_PAGES = ["", "books", "poems", "poets", "videos", "about"]
 
+# Cached set of known slugs and sitemap XML to avoid touching Neon on every SPA or bot hit
+_sitemap_cache: str | None = None
+_sitemap_cache_time: float = 0
+_sitemap_ttl = 3600.0  # 1 hour
+
+_known_slugs_cache: set[str] | None = None
+_known_slugs_cache_time: float = 0
+_known_slugs_ttl = 600.0  # 10 minutes
+
+
+def _get_known_slugs(db: Session) -> set[str]:
+    import time
+    global _known_slugs_cache, _known_slugs_cache_time
+    now = time.time()
+    if _known_slugs_cache is not None and (now - _known_slugs_cache_time) < _known_slugs_ttl:
+        return _known_slugs_cache
+
+    known = set(STATIC_PAGES) | {"admin"}
+    # Project ONLY the slug column across the wire: transferring slugs takes ~2 KB
+    # instead of fetching entire Poem/Book rows (~800 KB)
+    book_slugs = [slug for (slug,) in db.query(Book.slug).all()]
+    poem_slugs = [slug for (slug,) in db.query(Poem.slug).all()]
+
+    known.update(f"books/{slug}" for slug in book_slugs)
+    known.update(f"poems/{slug}" for slug in poem_slugs)
+    known.update(f"poets/{poet['slug']}" for poet in POETS)
+
+    _known_slugs_cache = known
+    _known_slugs_cache_time = now
+    return known
+
 
 @app.get("/sitemap.xml", include_in_schema=False)
 def sitemap(db: Session = Depends(get_db)) -> Response:
-    """Built from the database rather than shipped as a static file, so a book
-    added in the admin is discoverable without a redeploy."""
+    """Built from the database and cached in-memory for 1 hour so crawlers hitting
+    sitemap.xml do not query Neon continuously."""
+    import time
+    global _sitemap_cache, _sitemap_cache_time
+    now = time.time()
+    if _sitemap_cache is not None and (now - _sitemap_cache_time) < _sitemap_ttl:
+        return Response(content=_sitemap_cache, media_type="application/xml")
+
     origin = SITE_URL or "http://localhost:8000"
     urls = list(STATIC_PAGES)
-    urls += [f"books/{book.slug}" for book in _books_query(db).all()]
-    urls += [f"poems/{poem.slug}" for poem in db.query(Poem).order_by(Poem.created_at.desc()).all()]
+    # Query only slug columns
+    urls += [f"books/{slug}" for (slug,) in db.query(Book.slug).all()]
+    urls += [f"poems/{slug}" for (slug,) in db.query(Poem.slug).order_by(Poem.created_at.desc()).all()]
     urls += [f"poets/{poet['slug']}" for poet in POETS]
 
     body = "".join(
@@ -150,13 +202,17 @@ def sitemap(db: Session = Depends(get_db)) -> Response:
         f"<lastmod>{date.today().isoformat()}</lastmod></url>"
         for path in urls
     )
+    xml_content = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        f"{body}</urlset>"
+    )
+    _sitemap_cache = xml_content
+    _sitemap_cache_time = now
     return Response(
-        content=(
-            '<?xml version="1.0" encoding="UTF-8"?>'
-            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-            f"{body}</urlset>"
-        ),
+        content=xml_content,
         media_type="application/xml",
+        headers={"Cache-Control": "public, max-age=3600, s-maxage=86400"},
     )
 
 
@@ -176,6 +232,7 @@ def robots() -> Response:
             f"Sitemap: {origin}/sitemap.xml\n"
         ),
         media_type="text/plain",
+        headers={"Cache-Control": "public, max-age=86400"},
     )
 
 
@@ -206,12 +263,8 @@ if DIST.is_dir():
         path = spa_path.strip("/")
         if path.startswith("api/"):
             return Response(status_code=404)
-        # /admin is a real page — it is simply not a public one, so robots.txt
-        # keeps it out of the index instead of the status code doing it.
-        known = set(STATIC_PAGES) | {"admin"}
-        known.update(f"books/{book.slug}" for book in _books_query(db).all())
-        known.update(f"poems/{poem.slug}" for poem in db.query(Poem).all())
-        known.update(f"poets/{poet['slug']}" for poet in POETS)
+        
+        known = _get_known_slugs(db)
         meta = seo.head(path, db, SITE_URL or "http://localhost:8000")
         return Response(
             content=seo.apply(_SHELL, meta),

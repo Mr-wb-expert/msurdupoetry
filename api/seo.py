@@ -135,8 +135,20 @@ def _breadcrumb(
     }
 
 
+import time
+
+_seo_cache: dict[str, tuple[float, dict]] = {}
+_SEO_CACHE_TTL = 600.0  # 10 minutes
+
+
 def head(path: str, db, origin: str) -> dict:
     """Title, description, canonical URL, share image and JSON-LD for one route."""
+    now = time.time()
+    cache_key = f"{origin}:{path}"
+    cached = _seo_cache.get(cache_key)
+    if cached is not None and (now - cached[0]) < _SEO_CACHE_TTL:
+        return cached[1]
+
     origin = origin.rstrip("/")
     url = f"{origin}/{path}" if path else f"{origin}/"
     title = description = None
@@ -261,7 +273,7 @@ def head(path: str, db, origin: str) -> dict:
         image = "/images/og-cover.png"
     image = _abs_image(image, origin)
 
-    return {
+    result = {
         "title": _full_title(title),
         "description": " ".join(description.split()),
         "url": url,
@@ -269,6 +281,8 @@ def head(path: str, db, origin: str) -> dict:
         "noindex": noindex,
         "graph": graph,
     }
+    _seo_cache[cache_key] = (now, result)
+    return result
 
 
 def apply(document: str, meta: dict) -> str:

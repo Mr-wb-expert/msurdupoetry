@@ -148,9 +148,64 @@ def health():
     return {"ok": True}
 
 
+# ---------------------------------------------------------------------------
+# In-memory Caches for public reads (avoids repeated round-trips to Neon)
+# ---------------------------------------------------------------------------
+
+_CACHE_TTL = 300.0  # 5 minutes default TTL
+
+_books_cache: list[BookOut] | None = None
+_books_cache_time: float = 0
+
+_poems_cache: list[PoemOut] | None = None
+_poems_cache_time: float = 0
+
+_poets_counts_cache: dict[str, int] | None = None
+_poets_counts_cache_time: float = 0
+
+_videos_cache: list[VideoOut] | None = None
+_videos_cache_time: float = 0
+
+_reviews_cache: dict[int, tuple[float, list[ReviewOut]]] = {}
+
+
+def _invalidate_books_cache() -> None:
+    global _books_cache, _books_cache_time
+    _books_cache = None
+    _books_cache_time = 0
+
+
+def _invalidate_poems_cache() -> None:
+    global _poems_cache, _poems_cache_time, _poets_counts_cache, _poets_counts_cache_time
+    _poems_cache = None
+    _poems_cache_time = 0
+    _poets_counts_cache = None
+    _poets_counts_cache_time = 0
+    _invalidate_poet_detail_cache()
+
+
+def _invalidate_videos_cache() -> None:
+    global _videos_cache, _videos_cache_time
+    _videos_cache = None
+    _videos_cache_time = 0
+
+
+def _invalidate_reviews_cache() -> None:
+    _reviews_cache.clear()
+
+
 @public.get("/books", response_model=list[BookOut])
 def list_books(db: Session = Depends(get_db)):
-    return _books_query(db).all()
+    global _books_cache, _books_cache_time
+    now = time.time()
+    if _books_cache is not None and (now - _books_cache_time) < _CACHE_TTL:
+        return _books_cache
+
+    books = _books_query(db).all()
+    serialized = [BookOut.model_validate(b) for b in books]
+    _books_cache = serialized
+    _books_cache_time = now
+    return serialized
 
 
 @public.get("/books/{slug}", response_model=BookOut)
@@ -163,7 +218,17 @@ def read_book(slug: str, db: Session = Depends(get_db)):
 
 @public.get("/poems", response_model=list[PoemOut])
 def list_poems(db: Session = Depends(get_db)):
-    return db.query(Poem).order_by(Poem.created_at.desc()).all()
+    global _poems_cache, _poems_cache_time
+    now = time.time()
+    if _poems_cache is not None and (now - _poems_cache_time) < _CACHE_TTL:
+        return _poems_cache
+
+    poems = db.query(Poem).order_by(Poem.created_at.desc()).all()
+    # Serialize to Pydantic models so it safely lives in memory independent of SQLAlchemy session
+    serialized = [PoemOut.model_validate(p) for p in poems]
+    _poems_cache = serialized
+    _poems_cache_time = now
+    return serialized
 
 
 @public.get("/poems/{slug}", response_model=PoemOut)
@@ -176,12 +241,20 @@ def read_poem(slug: str, db: Session = Depends(get_db)):
 
 @public.get("/poets", response_model=list[PoetOut])
 def list_poets(db: Session = Depends(get_db)):
-    counts: dict[str, int] = {
-        author or "": total
-        for author, total in db.query(Poem.author, func.count(Poem.id))
-        .group_by(Poem.author)
-        .all()
-    }
+    global _poets_counts_cache, _poets_counts_cache_time
+    now = time.time()
+    if _poets_counts_cache is not None and (now - _poets_counts_cache_time) < _CACHE_TTL:
+        counts = _poets_counts_cache
+    else:
+        counts = {
+            author or "": total
+            for author, total in db.query(Poem.author, func.count(Poem.id))
+            .group_by(Poem.author)
+            .all()
+        }
+        _poets_counts_cache = counts
+        _poets_counts_cache_time = now
+
     return [
         PoetOut(
             slug=poet["slug"],
@@ -194,18 +267,31 @@ def list_poets(db: Session = Depends(get_db)):
     ]
 
 
+_poet_detail_cache: dict[str, tuple[float, PoetDetail]] = {}
+
+
+def _invalidate_poet_detail_cache() -> None:
+    _poet_detail_cache.clear()
+
+
 @public.get("/poets/{slug}", response_model=PoetDetail)
 def read_poet(slug: str, db: Session = Depends(get_db)):
     poet = by_slug(slug)
     if poet is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    now = time.time()
+    cached = _poet_detail_cache.get(slug)
+    if cached is not None and (now - cached[0]) < _CACHE_TTL:
+        return cached[1]
+
     poems = (
         db.query(Poem)
         .filter(Poem.author.in_(poet["aliases"]))
         .order_by(Poem.created_at.desc())
         .all()
     )
-    return PoetDetail(
+    detail = PoetDetail(
         slug=poet["slug"],
         name=poet["name"],
         urdu=poet["urdu"],
@@ -213,24 +299,43 @@ def read_poet(slug: str, db: Session = Depends(get_db)):
         poem_count=len(poems),
         poems=poems,
     )
+    _poet_detail_cache[slug] = (now, detail)
+    return detail
 
 
 @public.get("/videos", response_model=list[VideoOut])
 def list_videos(db: Session = Depends(get_db)):
-    return db.query(Video).order_by(Video.created_at.desc()).all()
+    global _videos_cache, _videos_cache_time
+    now = time.time()
+    if _videos_cache is not None and (now - _videos_cache_time) < _CACHE_TTL:
+        return _videos_cache
+
+    videos = db.query(Video).order_by(Video.created_at.desc()).all()
+    serialized = [VideoOut.model_validate(v) for v in videos]
+    _videos_cache = serialized
+    _videos_cache_time = now
+    return serialized
 
 
 @public.get("/reviews", response_model=list[ReviewOut])
 def list_reviews(limit: int = 12, db: Session = Depends(get_db)) -> list[ReviewOut]:
+    safe_limit = max(1, min(limit, 100))
+    now = time.time()
+    cached = _reviews_cache.get(safe_limit)
+    if cached is not None and (now - cached[0]) < _CACHE_TTL:
+        return cached[1]
+
     rows = (
         db.query(Review)
         .options(joinedload(Review.book))
         .filter(Review.is_approved.is_(True))
         .order_by(Review.created_at.desc())
-        .limit(max(1, min(limit, 100)))
+        .limit(safe_limit)
         .all()
     )
-    return _review_outs(rows)
+    res = _review_outs(rows)
+    _reviews_cache[safe_limit] = (now, res)
+    return res
 
 
 @public.get("/books/{slug}/reviews", response_model=list[ReviewOut])
@@ -278,6 +383,7 @@ def submit_review(payload: ReviewIn, request: Request, db: Session = Depends(get
     review = Review(book=book, name=payload.name, body=payload.body, is_approved=True)
     db.add(review)
     db.commit()
+    _invalidate_reviews_cache()
     return MessageOut(detail="Thank you. Your review has been published.")
 
 
@@ -364,6 +470,7 @@ def create_book(payload: BookCreate, db: Session = Depends(get_db), _: Admin = D
     db.add(book)
     db.commit()
     db.refresh(book)
+    _invalidate_books_cache()
     return book
 
 
@@ -393,6 +500,7 @@ def update_book(
 
     db.commit()
     db.refresh(book)
+    _invalidate_books_cache()
     return book
 
 
@@ -403,6 +511,7 @@ def delete_book(slug: str, db: Session = Depends(get_db), _: Admin = Depends(req
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     db.delete(book)
     db.commit()
+    _invalidate_books_cache()
     return {"ok": True}
 
 
@@ -450,6 +559,7 @@ def upload_cover(
     book.cover_image = f"/media/{name}"
     db.commit()
     db.refresh(book)
+    _invalidate_books_cache()
     return book
 
 
@@ -460,6 +570,7 @@ def create_poem(payload: PoemCreate, db: Session = Depends(get_db), _: Admin = D
     db.add(poem)
     db.commit()
     db.refresh(poem)
+    _invalidate_poems_cache()
     return poem
 
 
@@ -489,6 +600,7 @@ def update_poem(
 
     db.commit()
     db.refresh(poem)
+    _invalidate_poems_cache()
     return poem
 
 
@@ -499,6 +611,7 @@ def delete_poem(slug: str, db: Session = Depends(get_db), _: Admin = Depends(req
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     db.delete(poem)
     db.commit()
+    _invalidate_poems_cache()
     return {"ok": True}
 
 
@@ -510,6 +623,7 @@ def create_video(
     db.add(video)
     db.commit()
     db.refresh(video)
+    _invalidate_videos_cache()
     return video
 
 
@@ -527,6 +641,7 @@ def update_video(
     video.description = payload.description
     db.commit()
     db.refresh(video)
+    _invalidate_videos_cache()
     return video
 
 
@@ -539,6 +654,7 @@ def delete_video(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     db.delete(video)
     db.commit()
+    _invalidate_videos_cache()
     return {"ok": True}
 
 
@@ -575,6 +691,7 @@ def moderate_review(
     review.is_approved = payload.is_approved
     db.commit()
     db.refresh(review)
+    _invalidate_reviews_cache()
     return _review_out(review)
 
 
@@ -584,6 +701,7 @@ def delete_review(
 ):
     db.delete(_review_by_id(db, review_id))
     db.commit()
+    _invalidate_reviews_cache()
     return {"ok": True}
 
 
