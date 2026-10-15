@@ -69,14 +69,16 @@ export default function PoemsPage() {
 
       <div className="border-b border-line bg-cream-50">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-16">
-          <p className="eyebrow">In his own words</p>
-          <h1 className="mt-3 text-4xl sm:text-5xl">Verses</h1>
-          <p className="mt-4 max-w-2xl text-lg text-muted">
-            Ghazal and nazm couplets, set in the Nastaliq they were written in.
-          </p>
-          {/* Nothing to count until the fetch answers — "0 verses" while the
-              request is in flight reads like an empty site. */}
-          {added.data && <p className="mt-3 text-sm text-muted">{counts}</p>}
+          <div className="text-center sm:text-start">
+            <p className="eyebrow">In his own words</p>
+            <h1 className="mt-3 text-4xl sm:text-5xl">Verses</h1>
+            <p className="mt-4 max-w-2xl text-lg text-muted">
+              Ghazal and nazm couplets, set in the Nastaliq they were written in.
+            </p>
+            {/* Nothing to count until the fetch answers — "0 verses" while the
+                request is in flight reads like an empty site. */}
+            {added.data && <p className="mt-3 text-sm text-muted">{counts}</p>}
+          </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <div role="tablist" aria-label="Filter couplets" className="flex flex-wrap gap-2">

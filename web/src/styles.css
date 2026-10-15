@@ -148,21 +148,16 @@
    Components
    ------------------------------------------------------------------- */
 @layer components {
-  /* Small-caps section label. One per band, never a restatement of the
-     heading directly beneath it. */
+  /* Small section label above a heading. Sentence case, so it reads as a
+     label and never restates the heading beneath it. */
   .eyebrow {
     font-size: 0.75rem;
     letter-spacing: 0.2em;
-    text-transform: uppercase;
     font-weight: 700;
     color: var(--color-marigold-700);
   }
   .eyebrow-light {
     color: var(--color-marigold-300);
-  }
-  /* Long eyebrows stay in sentence case: caps suit short labels, not phrases. */
-  .eyebrow-sentence {
-    text-transform: none;
   }
 
   .rule-accent {

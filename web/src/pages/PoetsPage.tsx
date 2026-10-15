@@ -24,12 +24,14 @@ export default function PoetsPage() {
 
       <div className="border-b border-line bg-cream-50">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-16">
-          <p className="eyebrow">The poets on the site</p>
-          <h1 className="mt-3 text-4xl sm:text-5xl">Poets</h1>
-          <p className="mt-4 max-w-2xl text-lg text-muted">
-            Every poet whose ghazals and nazms are collected here, each with their
-            own page and the verses written in their name.
-          </p>
+          <div className="text-center sm:text-start">
+            <p className="eyebrow">The poets on the site</p>
+            <h1 className="mt-3 text-4xl sm:text-5xl">Poets</h1>
+            <p className="mt-4 max-w-2xl text-lg text-muted">
+              Every poet whose ghazals and nazms are collected here, each with their
+              own page and the verses written in their name.
+            </p>
+          </div>
         </div>
       </div>
 

@@ -94,7 +94,7 @@ export default function HomePage() {
       <section className="border-b border-line bg-cream-50">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.15fr_1fr] lg:py-24">
           <div className="flex flex-col items-center text-center lg:items-start lg:text-start">
-            <p className="eyebrow eyebrow-sentence">Books, free to read</p>
+            <p className="eyebrow">Books, free to read</p>
             <h1 className="mt-4 text-5xl leading-[1.05] sm:text-6xl">
               Urdu Poetry &amp; Shayari by Syed Mujahid Sajjad
             </h1>
@@ -221,9 +221,11 @@ export default function HomePage() {
             </div>
 
             <div>
-              <p className="eyebrow">{categoryLabels[featured.category]}</p>
-              <h2 className="mt-3 text-3xl sm:text-4xl">{featured.title}</h2>
-              {featured.author && <p className="mt-2 text-muted">{featured.author}</p>}
+              <div className="text-center sm:text-start">
+                <p className="eyebrow">{categoryLabels[featured.category]}</p>
+                <h2 className="mt-3 text-3xl sm:text-4xl">{featured.title}</h2>
+                {featured.author && <p className="mt-2 text-muted">{featured.author}</p>}
+              </div>
 
               <p className="mt-6 max-w-2xl text-lg leading-relaxed text-ink-800">
                 {featured.description}

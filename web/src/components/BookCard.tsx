@@ -35,7 +35,7 @@ export default function BookCard({ book }: { book: Book }) {
       </Link>
 
       <div className="mt-3 flex flex-1 flex-col">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-marigold-700">
+        <p className="eyebrow">
           {categoryLabels[book.category]}
           {book.publishedYear && ` · ${book.publishedYear}`}
         </p>

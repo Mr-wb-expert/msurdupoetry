@@ -135,9 +135,11 @@ export default function BookPage() {
           </div>
 
           <div>
-            <p className="eyebrow">{categoryLabels[item.category]}</p>
-            <h1 className="mt-3 text-3xl sm:text-4xl">{item.title}</h1>
-            {item.author && <p className="mt-2 text-muted">{item.author}</p>}
+            <div className="text-center sm:text-start">
+              <p className="eyebrow">{categoryLabels[item.category]}</p>
+              <h1 className="mt-3 text-3xl sm:text-4xl">{item.title}</h1>
+              {item.author && <p className="mt-2 text-muted">{item.author}</p>}
+            </div>
 
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-ink-800">{item.description}</p>
 

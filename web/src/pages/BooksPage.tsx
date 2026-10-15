@@ -62,13 +62,15 @@ export default function BooksPage() {
 
       <div className="border-b border-line bg-cream-50">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-16">
-          <p className="eyebrow">The library</p>
-          <h1 className="mt-3 text-4xl sm:text-5xl">Books</h1>
-          <p className="mt-4 max-w-2xl text-lg text-muted">
-            {library.data
-              ? `${library.data.length} ${library.data.length === 1 ? "book" : "books"} — ${categoryList} — free to read in the browser and to download as a PDF. No account, no payment.`
-              : "Every book is free to read in the browser and to download as a PDF. No account, no payment."}
-          </p>
+          <div className="text-center sm:text-start">
+            <p className="eyebrow">The library</p>
+            <h1 className="mt-3 text-4xl sm:text-5xl">Books</h1>
+            <p className="mt-4 max-w-2xl text-lg text-muted">
+              {library.data
+                ? `${library.data.length} ${library.data.length === 1 ? "book" : "books"} — ${categoryList} — free to read in the browser and to download as a PDF. No account, no payment.`
+                : "Every book is free to read in the browser and to download as a PDF. No account, no payment."}
+            </p>
+          </div>
 
           {/* Search. The only wide field on the page, so it reads as the
               primary action. */}

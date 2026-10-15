@@ -77,9 +77,11 @@ export default function AboutPage() {
           </figure>
 
           <div>
-            <p className="eyebrow">About</p>
-            <h1 className="mt-3 text-4xl sm:text-5xl">{site.fullName}</h1>
-            <p className="mt-4 text-lg text-muted">{site.title}</p>
+            <div className="text-center sm:text-start">
+              <p className="eyebrow">About</p>
+              <h1 className="mt-3 text-4xl sm:text-5xl">{site.fullName}</h1>
+              <p className="mt-4 text-lg text-muted">{site.title}</p>
+            </div>
             <p className="mt-6 max-w-2xl leading-relaxed text-ink-800">
               {site.author} writes in Urdu. His poetry is built from observation rather than
               abstraction the street, the classroom, the people passing through and his criticism

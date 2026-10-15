@@ -77,10 +77,12 @@ export default function PoetPage() {
             <span className="text-ink-800">{item.urdu}</span>
           </nav>
 
-          <h1 dir="rtl" lang="ur" className="urdu-display mt-6 text-4xl sm:text-5xl">
-            {item.urdu}
-          </h1>
-          <p className="mt-2 text-base font-semibold text-maroon-700">{item.name}</p>
+          <div className="text-center sm:text-start">
+            <h1 dir="rtl" lang="ur" className="urdu-display mt-6 text-4xl sm:text-5xl">
+              {item.urdu}
+            </h1>
+            <p className="mt-2 text-base font-semibold text-maroon-700">{item.name}</p>
+          </div>
           <p dir="rtl" lang="ur" className="urdu-display mt-5 max-w-2xl text-lg leading-8 text-ink-800">
             {item.bio}
           </p>
