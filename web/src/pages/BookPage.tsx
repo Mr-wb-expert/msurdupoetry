@@ -28,7 +28,7 @@ export default function BookPage() {
   if (book.loading || !book.data) {
     return (
       <>
-        <Seo title="Loading" noIndex />
+        <Seo title="Loading" />
         <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
           <Loading label="Loading book details" />
         </div>

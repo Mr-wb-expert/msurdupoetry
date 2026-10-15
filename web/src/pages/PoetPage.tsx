@@ -20,7 +20,7 @@ export default function PoetPage() {
   if (poet.loading || !poet.data) {
     return (
       <>
-        <Seo title="Loading" noIndex />
+        <Seo title="Loading" />
         <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
           <Loading label="Loading poet and verses" />
         </div>
