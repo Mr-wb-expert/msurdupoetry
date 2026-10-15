@@ -18,6 +18,18 @@ const ALIASES: Record<string, string> = {
   "مخدوم محی الدین": "makhdoom-mohiuddin",
   "ن م راشد": "n-m-rashid",
   "میراجی": "meeraji",
+  "منیر نیازی": "munir-niazi",
+  "Munir Niazi": "munir-niazi",
+  "قتیل شفائی": "qateel-shifai",
+  "Qateel Shifai": "qateel-shifai",
+  "ناصر کاظمی": "nasir-kazmi",
+  "Nasir Kazmi": "nasir-kazmi",
+  "سید ضمیر جعفری": "syed-zameer-jafri",
+  "Syed Zameer Jafari": "syed-zameer-jafri",
+  "Zameer Jafari": "syed-zameer-jafri",
+  "مصطفیٰ زیدی": "mustafa-zaidi",
+  "مصطفی زیدی": "mustafa-zaidi",
+  "Mustafa Zaidi": "mustafa-zaidi",
 };
 
 /** The hub URL for an author, or null when they have no poet page. */
