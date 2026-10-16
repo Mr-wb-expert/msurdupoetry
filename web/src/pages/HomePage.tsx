@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, BookOpen, Download, Languages, Quote } from "lucide-react";
 
@@ -67,6 +67,8 @@ export default function HomePage() {
         { label: "Price", value: "Free" },
       ].filter(Boolean) as { label: string; value: string }[])
     : [];
+
+  const [openReview, setOpenReview] = useState<Review | null>(null);
 
   return (
     <>
@@ -358,21 +360,100 @@ export default function HomePage() {
         )}
 
         <ul className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {(reviews.data ?? []).map((review: Review) => (
-            <li key={review.id} className="lift rounded-sm border border-line bg-paper p-5 shadow-cover">
-              <Quote aria-hidden="true" className="size-5 text-marigold-500" />
-              <p className="mt-3 text-sm leading-relaxed text-ink-800">{review.body}</p>
-              <p className="mt-4 text-xs font-semibold">{review.name}</p>
-              <Link
-                to={`/books/${review.bookSlug}`}
-                className="mt-0.5 block text-xs text-muted hover:text-maroon-700"
+          {(reviews.data ?? []).map((review: Review) => {
+            const isLong = (review.body || "").length > 130;
+            return (
+              <li
+                key={review.id}
+                className="lift flex flex-col justify-between rounded-sm border border-line bg-paper p-5 shadow-cover transition-colors hover:border-maroon-700/30"
               >
-                on {review.bookTitle}
-              </Link>
-            </li>
-          ))}
+                <div>
+                  <Quote aria-hidden="true" className="size-5 text-marigold-500" />
+                  <div
+                    onClick={() => isLong && setOpenReview(review)}
+                    className={isLong ? "cursor-pointer group" : ""}
+                    title={isLong ? "Click to read full review" : undefined}
+                  >
+                    <p className="mt-3 line-clamp-4 whitespace-pre-line text-sm leading-relaxed text-ink-800">
+                      {review.body}
+                    </p>
+                    {isLong && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenReview(review);
+                        }}
+                        className="mt-2 text-xs font-semibold text-maroon-700 hover:underline inline-block"
+                      >
+                        Read more →
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-5 border-t border-line/60 pt-3">
+                  <p className="text-xs font-semibold text-ink-950">{review.name}</p>
+                  <Link
+                    to={`/books/${review.bookSlug}`}
+                    className="mt-0.5 block text-xs text-muted hover:text-maroon-700"
+                  >
+                    on {review.bookTitle}
+                  </Link>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </section>
+
+      {/* Full review modal dialog */}
+      {openReview && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-ink-950/40 p-4"
+          onClick={() => setOpenReview(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Review by ${openReview.name}`}
+            className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-sm border border-line bg-paper p-6 shadow-cover"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <div>
+                <p className="text-base font-semibold text-ink-950">{openReview.name}</p>
+                <Link
+                  to={`/books/${openReview.bookSlug}`}
+                  className="text-xs text-muted hover:text-maroon-700"
+                  onClick={() => setOpenReview(null)}
+                >
+                  on {openReview.bookTitle}
+                </Link>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpenReview(null)}
+                className="text-muted hover:text-ink-900 text-lg font-bold px-2"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-ink-800">
+              {openReview.body}
+            </p>
+            <button
+              type="button"
+              autoFocus
+              className="btn btn-secondary mt-6 w-full"
+              onClick={() => setOpenReview(null)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {library.error && (
         <div className="mx-auto max-w-2xl px-4 pb-16 sm:px-6">
