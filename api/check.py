@@ -623,6 +623,42 @@ if DIST.is_dir():
     )
     check("unknown poet is a 404", client.get("/poets/not-a-real-poet").status_code == 404)
 
+    # The new titles must lead with the roman poet name and include head
+    # terms, because search queries are in latin script (e.g., "mirza ghalib
+    # poetry"), not in the Urdu script of the old title.
+    poet_page_m = client.get("/poets/mirza-ghalib")
+    check(
+        "poet page title uses roman name and keywords",
+        "<title>Mirza Ghalib — Ghazal, Shayari &amp; Poetry — Mujahid Sajjad</title>"
+        in poet_page_m.text,
+        poet_page_m.text[:300],
+    )
+    # The poets section deleted its poem, so this section makes its own.
+    client.post(
+        "/api/admin/poems",
+        json={"title": "Hub Poem", "body": "a sher\nwith two lines", "author": "Faiz Ahmed Faiz"},
+    )
+    hp = client.get("/poems/hub-poem")
+    check(
+        "poem title includes author and kind",
+        "<title>Hub Poem — Ghazal by Faiz Ahmed Faiz — Mujahid Sajjad</title>" in hp.text,
+        hp.text[:320],
+    )
+    client.post(
+        "/api/admin/poems",
+        json={
+            "title": "Mir Ghazal",
+            "body": "a line\nnext",
+            "author": "مرزا اسد اللہ خان غالب",
+        },
+    )
+    m = client.get("/poems/mir-ghazal")
+    check(
+        "poem head uses roman author name for Urdu-script author",
+        "<title>Mir Ghazal — Ghazal by Mirza Ghalib — Mujahid Sajjad</title>" in m.text,
+        m.text[:320],
+    )
+
 print(f"api check: {passed} assertions passed")
 
 # Cleanup must never turn a passing run into a failing one, so the summary is

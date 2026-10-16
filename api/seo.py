@@ -18,7 +18,7 @@ import re
 from urllib.parse import quote
 
 from api.models import Book, Poem
-from api.poets import by_slug
+from api.poets import by_slug, roman_name
 
 SITE_NAME = "Mujahid Sajjad"
 FULL_NAME = "Prof. Syed Mujahid Sajjad"
@@ -219,11 +219,14 @@ def head(path: str, db, origin: str) -> dict:
             noindex = True
         else:
             kind = poem.type or "Poem"
-            title = f"{poem.title} — Urdu {kind}"
+            # The roman name: half the stored authors are in Urdu script, and
+            # nobody types a search in Urdu script. This is what the head says.
+            author = roman_name(poem.author) or SITE_NAME
+            title = f"{poem.title} — {kind} by {author}"
             # Per-poem description: quote the opening lines instead of a
             # template, so every page's crawler signal actually differs.
             lines = [l.strip() for l in (poem.body or "").split("\n") if l.strip()]
-            suffix = f"by {poem.author or SITE_NAME}. Urdu {kind.lower()} online."
+            suffix = f"by {author}. Urdu {kind.lower()} online."
             budget = max(20, 155 - len(f"{poem.title} {suffix}"))
             opening = " ".join(lines[:2])[:budget]
             description = f"“{opening}” {poem.title} {suffix}"
@@ -245,8 +248,13 @@ def head(path: str, db, origin: str) -> dict:
         if poet is None:
             noindex = True
         else:
-            title = f"{poet['urdu']} — Urdu Poet"
-            description = " ".join(poet["bio"].split())[:160]
+            # The roman name leads the title: the queries are "jaun elia
+            # poetry" and "parveen shakir shayari", never the Urdu script.
+            title = f"{poet['name']} — Ghazal, Shayari & Poetry"
+            description = (
+                f"Read Urdu ghazals, nazms and shayari by {poet['name']} — "
+                "biography and verses, free online, no sign-up."
+            )
             graph = [
                 {
                     "@context": "https://schema.org",

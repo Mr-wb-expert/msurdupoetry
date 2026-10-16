@@ -30,13 +30,16 @@ export default function PoetPage() {
 
   const item = poet.data;
   const poetUrl = `${window.location.origin}/poets/${item.slug}`;
-  // Mirrors the snippet rule in api/seo.py.
-  const description = item.bio.replace(/\s+/g, " ").slice(0, 160);
+  // Mirrors the head rule in api/seo.py: the roman name leads, because that is
+  // what the queries look like ("jaun elia poetry", not the Urdu script).
+  const description =
+    `Read Urdu ghazals, nazms and shayari by ${item.name} — ` +
+    "biography and verses, free online, no sign-up.";
 
   return (
     <>
       <Seo
-        title={`${item.urdu} — Urdu Poet`}
+        title={`${item.name} — Ghazal, Shayari & Poetry`}
         description={description}
         jsonLd={[
           {

@@ -284,9 +284,26 @@ POETS = [
 # slug -> row, for the URL -> page and the head rewrite.
 _BY_SLUG = {poet["slug"]: poet for poet in POETS}
 
+# `Poem.author` as saved -> row. Half the rows store the name in Urdu script,
+# so a title that interpolates the raw author string ranks for nothing the
+# reader actually types; the roman `name` is what goes into the head.
+_BY_ALIAS = {alias: poet for poet in POETS for alias in poet["aliases"]}
+
 
 def by_slug(slug: str) -> dict | None:
     return _BY_SLUG.get(slug)
+
+
+def by_author(author: str | None) -> dict | None:
+    return _BY_ALIAS.get(author) if author else None
+
+
+def roman_name(author: str | None) -> str | None:
+    """The poet's latin name, or the author string when it is already latin."""
+    if not author:
+        return None
+    poet = by_author(author)
+    return poet["name"] if poet else author
 
 
 def matches(poet: dict, author: str | None) -> bool:

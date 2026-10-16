@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import Seo from "@/components/Seo.tsx";
 import { ErrorNote, Loading } from "@/components/Feedback.tsx";
 import { site } from "@/lib/site";
-import { poetHref } from "@/lib/poets";
+import { poetHref, romanAuthor } from "@/lib/poets";
 import { useApi } from "@/lib/useApi.ts";
 import { getPoem } from "@/lib/api.ts";
 import type { Poem } from "@/lib/types";
@@ -34,13 +34,15 @@ export default function PoemPage() {
   const item: Poem = poem.data;
   const authorName = item.author || site.author;
   const authorHref = poetHref(item.author);
+  // Mirrors roman_name in api/seo.py — see the title rule below.
+  const headAuthor = romanAuthor(item.author) ?? site.author;
 
   // Mirrors the snippet rule in api/seo.py: quote the opening lines so every
   // poem page's meta description is genuinely unique.
   const lines = (item.body ?? "").split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
-  const suffix = `by ${item.author || site.author}. Urdu ${(item.type ?? "Poem").toLowerCase()} online.`;
+  const suffix = `by ${headAuthor}. Urdu ${(item.type ?? "Poem").toLowerCase()} online.`;
   const budget = Math.max(20, 155 - (item.title + " " + suffix).length);
   const opening = lines.slice(0, 2).join(" ").slice(0, budget);
   const description =
@@ -50,7 +52,7 @@ export default function PoemPage() {
     <>
       {/* Title/description pattern mirrored in api/seo.py. */}
       <Seo
-        title={`${item.title} — Urdu ${item.type ?? "Poem"}`}
+        title={`${item.title} — ${item.type ?? "Poem"} by ${headAuthor}`}
         description={description}
         jsonLd={[
           {
