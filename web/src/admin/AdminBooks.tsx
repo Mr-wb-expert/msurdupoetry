@@ -9,7 +9,7 @@ import { getBooks } from "@/lib/api.ts";
 import { categoryLabels, type Book } from "@/lib/types";
 
 export default function AdminBooks() {
-  const books = useApi(getBooks);
+  const books = useApi(() => getBooks(true));
 
   return (
     <div>

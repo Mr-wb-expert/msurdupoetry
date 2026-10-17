@@ -103,7 +103,8 @@ async function readOrNull<T>(path: string): Promise<T | null> {
 /* Public                                                            */
 /* ---------------------------------------------------------------- */
 
-export const getBooks = () => request<Book[]>("/books");
+export const getBooks = (fresh = false) =>
+  request<Book[]>(`/books${fresh ? `?t=${Date.now()}` : ""}`);
 export const getBook = (slug: string) =>
   readOrNull<Book>(`/books/${encodeURIComponent(slug)}`);
 export const getPoems = (fresh = false) =>
@@ -112,7 +113,8 @@ export const getPoet = (slug: string) => request<PoetDetail>(`/poets/${encodeURI
 export const getPoets = () => request<Poet[]>("/poets");
 export const getPoem = (slug: string) =>
   readOrNull<Poem>(`/poems/${encodeURIComponent(slug)}`);
-export const getVideos = () => request<Video[]>("/videos");
+export const getVideos = (fresh = false) =>
+  request<Video[]>(`/videos${fresh ? `?t=${Date.now()}` : ""}`);
 export const getReviews = (limit = 12) => request<Review[]>(`/reviews?limit=${limit}`);
 export const getReviewsForBook = (slug: string) =>
   request<Review[]>(`/books/${encodeURIComponent(slug)}/reviews`);

@@ -8,7 +8,7 @@ import { useApi } from "@/lib/useApi.ts";
 import type { Video } from "@/lib/types";
 
 export default function AdminVideos() {
-  const videos = useApi(getVideos);
+  const videos = useApi(() => getVideos(true));
 
   return (
     <div>
