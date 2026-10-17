@@ -17,12 +17,24 @@ import { categoryLabels, type Book, type Review } from "@/lib/types";
 
 export default function HomePage() {
   const library = useApi(getBooks);
-  const reviews = useApi(() => getReviews(6));
+  const reviews = useApi(() => getReviews(100));
   const poems = useApi(getPoems);
   const videos = useApi(getVideos);
 
   const books = library.data ?? [];
   const verseCount = poems.data?.length ?? 0;
+
+  // Three random reviews per visit: reshuffled on reload/refresh from all approved reviews
+  const reviewPreview = useMemo(() => {
+    const pool = [...(reviews.data ?? [])];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const a = pool[i]!;
+      pool[i] = pool[j]!;
+      pool[j] = a;
+    }
+    return pool.slice(0, 3);
+  }, [reviews.data]);
 
   // Three random verses per visit: reshuffled on the next page load, stable
   // while the visitor stays (Fisher-Yates, then the first three).
@@ -360,7 +372,7 @@ export default function HomePage() {
         )}
 
         <ul className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {(reviews.data ?? []).map((review: Review) => {
+          {reviewPreview.map((review: Review) => {
             const isLong = (review.body || "").length > 130;
             return (
               <li

@@ -199,14 +199,23 @@ export const deletePoem = async (slug: string) => {
   return res;
 };
 
-export const createVideo = (payload: unknown) =>
-  request<Video>("/admin/videos", { method: "POST", body: JSON.stringify(payload) });
+export const createVideo = async (payload: unknown) => {
+  const res = await request<Video>("/admin/videos", { method: "POST", body: JSON.stringify(payload) });
+  clearApiCache("/videos");
+  return res;
+};
 
-export const updateVideo = (id: number, payload: unknown) =>
-  request<Video>(`/admin/videos/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+export const updateVideo = async (id: number, payload: unknown) => {
+  const res = await request<Video>(`/admin/videos/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+  clearApiCache("/videos");
+  return res;
+};
 
-export const deleteVideo = (id: number) =>
-  request<{ ok: boolean }>(`/admin/videos/${id}`, { method: "DELETE" });
+export const deleteVideo = async (id: number) => {
+  const res = await request<{ ok: boolean }>(`/admin/videos/${id}`, { method: "DELETE" });
+  clearApiCache("/videos");
+  return res;
+};
 
 /**
  * Upload a cover. The filename is sent through untouched because the server
