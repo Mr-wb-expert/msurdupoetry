@@ -21,7 +21,7 @@ export default function BookPage() {
   const { slug = "" } = useParams();
   const book = useApi(() => getBook(slug), [slug]);
   const library = useApi(getBooks);
-  const reviews = useApi(() => getReviewsForBook(slug), [slug]);
+  const reviews = useApi(() => getReviewsForBook(slug, true), [slug]);
   const [reading, setReading] = useState(false);
 
   if (book.error) return <NotFoundPage />;

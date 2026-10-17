@@ -62,7 +62,7 @@ export default function AdminBookForm() {
   const isNew = !slug;
   const navigate = useNavigate();
 
-  const existing = useApi(() => getBook(slug), [slug]);
+  const existing = useApi(() => getBook(slug), [slug], !isNew);
 
   const [draft, setDraft] = useState<Draft>(blank);
   const [busy, setBusy] = useState(false);

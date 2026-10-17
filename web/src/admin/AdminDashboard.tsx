@@ -16,9 +16,9 @@ const formatDate = (iso?: string) => {
 };
 
 export default function AdminDashboard() {
-  const books = useApi(getBooks);
-  const poems = useApi(getPoems);
-  const videos = useApi(getVideos);
+  const books = useApi(() => getBooks(true));
+  const poems = useApi(() => getPoems(true));
+  const videos = useApi(() => getVideos(true));
 
   const bookList = books.data ?? [];
   // Books carry no timestamp — the API's own sortOrder is their order. Poems do.

@@ -17,7 +17,7 @@ import { categoryLabels, type Book, type Review } from "@/lib/types";
 
 export default function HomePage() {
   const library = useApi(getBooks);
-  const reviews = useApi(() => getReviews(100));
+  const reviews = useApi(() => getReviews(100, true));
   const poems = useApi(getPoems);
   const videos = useApi(getVideos);
 
@@ -379,14 +379,14 @@ export default function HomePage() {
                 key={review.id}
                 className="lift flex flex-col justify-between rounded-sm border border-line bg-paper p-5 shadow-cover transition-colors hover:border-maroon-700/30"
               >
-                <div>
-                  <Quote aria-hidden="true" className="size-5 text-marigold-500" />
+                <div className="flex flex-1 flex-col justify-center">
+                  <Quote aria-hidden="true" className="size-5 text-marigold-500/80 mb-2" />
                   <div
                     onClick={() => isLong && setOpenReview(review)}
-                    className={isLong ? "cursor-pointer group" : ""}
+                    className={`my-auto text-center ${isLong ? "cursor-pointer group" : ""}`}
                     title={isLong ? "Click to read full review" : undefined}
                   >
-                    <p className="mt-3 line-clamp-4 whitespace-pre-line text-sm leading-relaxed text-ink-800">
+                    <p className="py-1 line-clamp-4 whitespace-pre-line text-sm leading-[2.2] text-ink-800">
                       {review.body}
                     </p>
                     {isLong && (
@@ -404,7 +404,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="mt-5 border-t border-line/60 pt-3">
+                <div className="mt-4 border-t border-line/60 pt-3 text-left">
                   <p className="text-xs font-semibold text-ink-950">{review.name}</p>
                   <Link
                     to={`/books/${review.bookSlug}`}
@@ -452,7 +452,7 @@ export default function HomePage() {
                 ✕
               </button>
             </div>
-            <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-ink-800">
+            <p className="mt-4 py-1 whitespace-pre-line text-sm leading-[2.2] text-ink-800">
               {openReview.body}
             </p>
             <button

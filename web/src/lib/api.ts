@@ -115,9 +115,10 @@ export const getPoem = (slug: string) =>
   readOrNull<Poem>(`/poems/${encodeURIComponent(slug)}`);
 export const getVideos = (fresh = false) =>
   request<Video[]>(`/videos${fresh ? `?t=${Date.now()}` : ""}`);
-export const getReviews = (limit = 12) => request<Review[]>(`/reviews?limit=${limit}`);
-export const getReviewsForBook = (slug: string) =>
-  request<Review[]>(`/books/${encodeURIComponent(slug)}/reviews`);
+export const getReviews = (limit = 12, fresh = false) =>
+  request<Review[]>(`/reviews?limit=${limit}${fresh ? `&t=${Date.now()}` : ""}`);
+export const getReviewsForBook = (slug: string, fresh = false) =>
+  request<Review[]>(`/books/${encodeURIComponent(slug)}/reviews${fresh ? `?t=${Date.now()}` : ""}`);
 
 export async function postReview(payload: {
   bookSlug: string;
@@ -134,6 +135,8 @@ export async function postReview(payload: {
       website: payload.website,
     }),
   });
+  clearApiCache("/reviews");
+  clearApiCache("/books");
   return result.detail;
 }
 
@@ -223,11 +226,13 @@ export const deleteVideo = async (id: number) => {
  * Upload a cover. The filename is sent through untouched because the server
  * replaces it with a generated one — it only needs the extension.
  */
-export function uploadCover(slug: string, file: File) {
+export async function uploadCover(slug: string, file: File) {
   const form = new FormData();
   form.append("file", file);
-  return request<Book>(`/admin/books/${encodeURIComponent(slug)}/cover`, {
+  const res = await request<Book>(`/admin/books/${encodeURIComponent(slug)}/cover`, {
     method: "POST",
     body: form,
   });
+  clearApiCache("/books");
+  return res;
 }

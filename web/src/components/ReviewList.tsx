@@ -52,7 +52,7 @@ export default function ReviewList({
     <>
       <ul className="space-y-4">
         {reviews.map((review) => (
-          <li key={review.id} className="lift rounded-sm border border-line bg-paper p-5 shadow-cover">
+          <li key={review.id} className="lift rounded-sm border border-line bg-paper p-5 shadow-cover text-left">
             <p className="text-sm font-semibold">{review.name}</p>
             {/* Fixed card height: long reviews clamp to three lines and the
                 full text moves to the dialog below. */}
@@ -61,7 +61,7 @@ export default function ReviewList({
                 if (el) bodyRefs.current.set(review.id, el);
                 else bodyRefs.current.delete(review.id);
               }}
-              className="mt-2 line-clamp-3 whitespace-pre-line text-sm leading-relaxed text-ink-800"
+              className="mt-2 py-1 line-clamp-3 whitespace-pre-line text-sm leading-[2.2] text-ink-800"
             >
               {review.body}
             </p>
