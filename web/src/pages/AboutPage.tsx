@@ -7,27 +7,29 @@ import { getBooks } from "@/lib/api.ts";
 import { Link } from "react-router-dom";
 
 // Mirrors FAQ in api/seo.py — the schema and the visible copy must be
-// identical, so both live here in the same words.
+// identical, so both live here in the same words. Answers run 40-60 words:
+// long enough for an engine to lift one whole, short enough to stay one
+// answer, and every claim in them is a fact the library already states.
 const faq = [
   {
     q: "Who is Mujahid Sajjad?",
-    a: "Syed Mujahid Sajjad is an Urdu poet and writer, and Associate Professor of English at Govt. Graduate College Burewala, Government of the Punjab.",
+    a: "Syed Mujahid Sajjad is an Urdu poet and writer, and Associate Professor of English at Govt. Graduate College Burewala, Government of the Punjab. He writes ghazals and nazms in Urdu and teaches English; his collection Magar Manzar Nahi Mera and Ghazala Anjum's critical study of his poetry both live in this site's free library.",
   },
   {
     q: "Where can I read Magar Manzar Nahi Mera online?",
-    a: "The whole book is free on this site — read it in the browser or download the PDF from the Books page. No account is needed.",
+    a: "The whole book is free on this site — open it in the browser from its Books page, or download the PDF from the same page. It is a collection of ghazals and nazms published in 2026, and reading it needs no account, no sign-up and no payment.",
   },
   {
     q: "Are the books free to download?",
-    a: "Yes. Every book is free to read online and free to download as a PDF — no account, no payment.",
+    a: "Yes. Every book in the library — poetry, criticism and essays — is free to read online and free to download as a PDF. There is no account, no subscription and no payment at any point; each book page carries its own download link.",
   },
   {
     q: "Who wrote the criticism of his poetry?",
-    a: "Ghazala Anjum's critical study, An Article on the Poetry of Mujahid Sajjad, sits in the library alongside the collection.",
+    a: "Ghazala Anjum wrote it. Her critical study, An Article on the Poetry of Mujahid Sajjad, is kept in the library alongside the collection — a reading of the poems' images, plainspoken idiom and the balance they hold between observation and feeling.",
   },
   {
     q: "What languages does he write in?",
-    a: "He writes poetry in Urdu and teaches English.",
+    a: "He writes poetry in Urdu — ghazals, nazms and essays — and teaches English as Associate Professor at Govt. Graduate College Burewala, Government of the Punjab. English is the language of his classroom; Urdu is the language of his verse, free to read here.",
   },
 ];
 
@@ -56,7 +58,7 @@ export default function AboutPage() {
       {/* Copy mirrored in api/seo.py (PAGE_COPY + FAQ). */}
       <Seo
         title="Urdu Poet at GGC Burewala"
-        description={`${site.fullName} is an Urdu poet and writer, and Associate Professor of English at ${site.affiliation}, Government of the Punjab.`}
+        description={`${site.fullName} is an Urdu poet and writer, and Associate Professor of English at ${site.affiliation}.`}
         jsonLd={faqGraph}
       />
 
@@ -81,6 +83,10 @@ export default function AboutPage() {
               <p className="eyebrow">About</p>
               <h1 className="mt-3 text-4xl sm:text-5xl">{site.fullName}</h1>
               <p className="mt-4 text-lg text-muted">{site.title}</p>
+              {/* The entity question, asked plainly — AI answers lift a
+                  question-shaped heading far more readily than a paragraph.
+                  Mirrored in api/seo.py's static body. */}
+              <h2 className="mt-6 text-2xl font-semibold">Who is Mujahid Sajjad?</h2>
             </div>
             <p className="mt-6 max-w-2xl leading-relaxed text-ink-800">
               {site.author} writes in Urdu. His poetry is built from observation rather than

@@ -47,6 +47,8 @@ export type Book = {
   sortOrder: number;
   /** Null for a row written before the column existed. */
   createdAt: string | null;
+  /** Last admin edit — feeds the page's visible date and dateModified. */
+  updatedAt: string | null;
 };
 
 /** What a verse is: the same three choices the admin form offers. */
@@ -65,6 +67,8 @@ export type Poem = {
   /** The collection the verse came from (Shayad, Gumaan ...), blank if unknown. */
   book: string | null;
   createdAt: string;
+  /** Last admin edit — feeds the poem page's visible date and dateModified. */
+  updatedAt: string | null;
 };
 
 /** One hub page in /poets. `urdu` is the display name and H1. */
@@ -95,5 +99,5 @@ export type Review = {
 };
 
 /** Everything the book form can change. The slug is separate: it is the URL. */
-export type BookInput = Omit<Book, "slug" | "createdAt"> & { slug?: string };
-export type PoemInput = Omit<Poem, "slug" | "createdAt"> & { slug?: string };
+export type BookInput = Omit<Book, "slug" | "createdAt" | "updatedAt"> & { slug?: string };
+export type PoemInput = Omit<Poem, "slug" | "createdAt" | "updatedAt"> & { slug?: string };

@@ -12,6 +12,7 @@ import ReviewList from "@/components/ReviewList.tsx";
 import { Loading } from "@/components/Feedback.tsx";
 import NotFoundPage from "./NotFoundPage.tsx";
 import { downloadUrl, embedUrl, externalReadUrl, relatedBooks } from "@/lib/books";
+import { formatDate, isoDate } from "@/lib/dates";
 import { site } from "@/lib/site";
 import { useApi } from "@/lib/useApi.ts";
 import { getBook, getBooks, getReviewsForBook } from "@/lib/api.ts";
@@ -38,6 +39,10 @@ export default function BookPage() {
 
   const item = book.data;
   const related = relatedBooks(item, library.data ?? []);
+  // Last admin edit. The visible Last updated row and the schema's
+  // dateModified both read it — published year only tells a reader when a
+  // book came out, not whether this page's text is current.
+  const modified = item.updatedAt ?? item.createdAt;
 
   const facts = [
     { label: "Author", value: item.author },
@@ -46,7 +51,27 @@ export default function BookPage() {
     item.pages && { label: "Pages", value: String(item.pages) },
     item.publication && { label: "Publication", value: item.publication },
     { label: "Price", value: "Free" },
+    modified && { label: "Last updated", value: formatDate(modified) },
   ].filter(Boolean) as { label: string; value: string }[];
+
+  // Mirrors book_faq() in api/seo.py — the FAQPage schema below and these
+  // visible questions must be the same words, question for question.
+  const faq = [
+    {
+      q: `Is ${item.title} free?`,
+      a: `Yes. ${item.title} is free to read in the browser on this page and free to download as a PDF — there is no account, no subscription and no payment at any point. The Read online and Download buttons at the top of the page open it.`,
+    },
+    {
+      q: `Who wrote ${item.title}?`,
+      a: `${item.author || site.fullName} wrote ${item.title}${item.publishedYear ? `, published in ${item.publishedYear}` : ""}. It sits in this site's free digital library of Urdu poetry, criticism and essays — read it online or download the PDF, no account needed.`,
+    },
+    {
+      q: `What is ${item.title} about?`,
+      a:
+        item.description.trim() ||
+        `${item.title} by ${item.author || site.fullName} — free to read online on this page and to download as a PDF.`,
+    },
+  ];
 
   return (
     <>
@@ -69,8 +94,21 @@ export default function BookPage() {
             isAccessibleForFree: true,
             ...(item.coverImage && { image: item.coverImage }),
             ...(item.publishedYear && { datePublished: String(item.publishedYear) }),
+            ...(modified && { dateModified: isoDate(modified) }),
             ...(item.pages && { numberOfPages: item.pages }),
             offers: { "@type": "Offer", price: "0", priceCurrency: "PKR" },
+          },
+          // The same three questions the page answers in visible text — see
+          // the FAQ section below; api/seo.py emits the same node for
+          // crawlers that skip JavaScript.
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: faq.map((entry) => ({
+              "@type": "Question",
+              name: entry.q,
+              acceptedAnswer: { "@type": "Answer", text: entry.a },
+            })),
           },
           // Mirrors the breadcrumb under it, which is what turns the trail
           // into a rich result instead of plain blue links.
@@ -152,6 +190,24 @@ export default function BookPage() {
           </div>
         </div>
       </div>
+
+      {/* The three questions a book page answers. The strings mirror
+          book_faq() in api/seo.py, which renders the same three for
+          crawlers that skip JavaScript. */}
+      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+        <SectionHeading eyebrow="FAQ" title="Common questions" />
+        <div className="mt-8 divide-y divide-line border-y border-line">
+          {faq.map((entry) => (
+            <div
+              key={entry.q}
+              className="grid gap-2 py-5 sm:grid-cols-[minmax(0,22rem)_1fr] sm:gap-8"
+            >
+              <h3 className="text-base font-semibold">{entry.q}</h3>
+              <p className="text-sm leading-relaxed text-muted">{entry.a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* Reviews and the form that adds to them. */}
       <section className="border-t border-line bg-cream-50">

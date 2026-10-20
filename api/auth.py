@@ -41,6 +41,19 @@ _BCRYPT_MAX_BYTES = 72
 def _secret() -> bytes:
     secret = os.environ.get("ADMIN_TOKEN_SECRET")
     if not secret:
+        # Fallback for dev server reloads: re-read .env if present
+        from pathlib import Path
+        env_path = Path(__file__).resolve().parent.parent / ".env"
+        if env_path.is_file():
+            for line in env_path.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line.startswith("ADMIN_TOKEN_SECRET="):
+                    secret = line.split("=", 1)[1].strip().strip('"').strip("'")
+                    if secret:
+                        os.environ["ADMIN_TOKEN_SECRET"] = secret
+                        break
+
+    if not secret:
         # Fail closed: without a secret we cannot sign or verify anything, and
         # silently allowing logins would be worse than refusing them.
         raise HTTPException(

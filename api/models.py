@@ -43,6 +43,12 @@ class Book(Base):
     # place; the default fills it from then on. The home page features the
     # newest book by this timestamp.
     created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=utcnow)
+    # Bumped by SQLAlchemy on every UPDATE, so the sitemap's lastmod and the
+    # pages' "Last updated" line stay honest without the admin form touching
+    # it. Nullable for the same migration reason as created_at.
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True, default=utcnow, onupdate=utcnow
+    )
 
     reviews: Mapped[list["Review"]] = relationship(
         back_populates="book", cascade="all, delete-orphan", passive_deletes=True
@@ -66,6 +72,11 @@ class Poem(Base):
     # unknown. Nullable for the same reason as type: old rows keep loading.
     book: Mapped[str | None] = mapped_column(String(120), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    # Bumped on every admin edit (see Book.updated_at); nullable so a table
+    # created before this column can be altered in place.
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True, default=utcnow, onupdate=utcnow
+    )
 
 
 class Review(Base):

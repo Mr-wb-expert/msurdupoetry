@@ -33,8 +33,12 @@ os.environ["ADMIN_TOKEN_SECRET"] = "self-check-secret"
 os.environ.pop("ADMIN_USERNAME", None)
 os.environ.pop("ADMIN_PASSWORD", None)
 
+from datetime import datetime  # noqa: E402
+
 from fastapi.testclient import TestClient  # noqa: E402
 
+from api import app as app_module  # noqa: E402
+from api import seo as seo_mod  # noqa: E402
 from api.app import app, DIST  # noqa: E402
 from api import seed  # noqa: E402
 from api.auth import hash_password, make_token, read_token  # noqa: E402
@@ -515,6 +519,12 @@ check(
     any(line.startswith("Sitemap: http") for line in r.text.splitlines()),
     r.text,
 )
+r = client.get("/llms.txt")
+check(
+    "llms.txt orients the AI fetchers",
+    r.status_code == 200 and "# Mujahid Sajjad" in r.text and "/poems" in r.text,
+    r.text[:200],
+)
 check("unknown page is a 404", client.get("/no-such-page").status_code == 404)
 if DIST.is_dir():
     check("home page is a 200", client.get("/").status_code == 200)
@@ -657,6 +667,148 @@ if DIST.is_dir():
         "poem head uses roman author name for Urdu-script author",
         "<title>Mir Ghazal — Ghazal by Mirza Ghalib — Mujahid Sajjad</title>" in m.text,
         m.text[:320],
+    )
+
+    # --- GEO: everything above ships the head; these ship the body. -------
+    # A fetcher that skips JavaScript (GPTBot, ClaudeBot, PerplexityBot ...)
+    # gets the page's rendered text inside #root; a real browser gets the
+    # empty root React expects. Same head either way.
+    print("geo")
+    gpt = {"User-Agent": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko) GPTBot/1.0"}
+    chrome = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    }
+
+    crawler_home = client.get("/", headers=gpt).text
+    home_root = crawler_home.split('<div id="root">')[-1]
+    check(
+        "crawler gets the home page as text",
+        "<h1>Urdu Poetry &amp; Shayari by Syed Mujahid Sajjad</h1>" in home_root
+        and "Welcome to the official digital library" in home_root,
+        home_root[:300],
+    )
+    browser_home = client.get("/", headers=chrome).text
+    check(
+        "browser gets the empty root React expects",
+        '<div id="root"></div>' in browser_home,
+        browser_home[:300],
+    )
+    check(
+        "browser and crawler read the same head",
+        browser_home.split("<title>")[1].split("</title>")[0]
+        == crawler_home.split("<title>")[1].split("</title>")[0],
+        browser_home[:300],
+    )
+    check("person schema carries social profiles", '"sameAs"' in crawler_home, crawler_home[:600])
+
+    crawler_book = client.get("/books/magar-manzar-nahi-mera", headers=gpt).text
+    book_root = crawler_book.split('<div id="root">')[-1]
+    # "free of charge" sits past the 300-char meta description and in no
+    # schema node, so it can only have arrived in the rendered body.
+    check(
+        "crawler gets the book's full description as text",
+        "free of charge" in book_root,
+        book_root[:400],
+    )
+    check(
+        "book page ships its FAQ as visible text",
+        "<h3>Is Magar Manzar Nahi Mera free?</h3>" in book_root,
+        book_root[-400:],
+    )
+
+    crawler_poem = client.get("/poems/mir-ghazal", headers=gpt).text
+    poem_root = crawler_poem.split('<div id="root">')[-1]
+    check(
+        "crawler gets the full verse, marked as Urdu",
+        '<div lang="ur"><p style="white-space:pre-line">a line\nnext</p>' in poem_root,
+        poem_root[:400],
+    )
+    check(
+        "poem body states its dates and skips a needless Last updated",
+        "Published " in poem_root and "Last updated" not in poem_root,
+        poem_root[:300],
+    )
+
+    crawler_about = client.get("/about", headers=gpt).text
+    about_root = crawler_about.split('<div id="root">')[-1]
+    check(
+        "about page serves the entity heading and FAQ as text",
+        "<h2>Who is Mujahid Sajjad?</h2>" in about_root
+        and "<h3>Who is Mujahid Sajjad?</h3>" in about_root,
+        about_root[:400],
+    )
+    check(
+        "about FAQ answer is in the body and the schema",
+        crawler_about.count("both live in this site's free library") >= 2,
+        str(crawler_about.count("both live in this site's free library")),
+    )
+
+    crawler_books = client.get("/books", headers=gpt).text
+    books_root = crawler_books.split('<div id="root">')[-1]
+    check(
+        "crawler gets the catalogue as links to every book",
+        "<h1>Books</h1>" in books_root
+        and '<h2><a href="/books/magar-manzar-nahi-mera">' in books_root,
+        books_root[:400],
+    )
+
+    crawler_videos = client.get("/videos", headers=gpt).text
+    check(
+        "videos page ships VideoObject schema",
+        '"@type":"VideoObject"' in crawler_videos
+        and "hqdefault.jpg" in crawler_videos
+        and "abc-DEF_123" in crawler_videos,
+        crawler_videos[crawler_videos.find("page-jsonld") - 100:][:400],
+    )
+
+    # Real dates: per-URL lastmod in the sitemap, the same stamp as
+    # dateModified in the head, and updated_at bumped by every admin edit.
+    print("dates")
+    db_dates = SessionLocal()
+    backdated = db_dates.query(Book).filter(Book.slug == "magar-manzar-nahi-mera").first()
+    backdated.created_at = datetime(2025, 1, 15, 9, 0, 0)
+    backdated.updated_at = datetime(2025, 1, 15, 9, 0, 0)
+    db_dates.commit()
+    db_dates.close()
+
+    app_module._sitemap_cache = None
+    sm = client.get("/sitemap.xml").text
+    check(
+        "book url carries its own lastmod",
+        "/books/magar-manzar-nahi-mera</loc><lastmod>2025-01-15</lastmod>" in sm,
+        sm[:400],
+    )
+    marker = "/about</loc><lastmod>"
+    check("sitemap lists the about page", marker in sm, sm[:400])
+    about_stamp = sm.split(marker)[-1].split("</lastmod>")[0]
+    check(
+        "list pages use their content's newest date, not the backdated one",
+        about_stamp != "2025-01-15",
+        about_stamp,
+    )
+
+    seo_mod._seo_cache.clear()
+    check(
+        "book head carries the book's own dateModified",
+        '"dateModified":"2025-01-15"' in client.get("/books/magar-manzar-nahi-mera").text,
+    )
+
+    db_edit = SessionLocal()
+    edited = db_edit.query(Book).filter(Book.slug == "a-new-book").first()
+    edited.updated_at = datetime(2000, 1, 1, 0, 0, 0)
+    db_edit.commit()
+    db_edit.close()
+    r = client.put(
+        "/api/admin/books/a-new-book",
+        json={"title": "Renamed Book", "description": "edited"},
+    )
+    check(
+        "admin edit bumps updatedAt",
+        r.status_code == 200
+        and r.json().get("updatedAt")
+        and r.json()["updatedAt"] != "2000-01-01T00:00:00",
+        r.text,
     )
 
 print(f"api check: {passed} assertions passed")

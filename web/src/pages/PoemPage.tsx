@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 
 import Seo from "@/components/Seo.tsx";
 import { ErrorNote, Loading } from "@/components/Feedback.tsx";
+import { formatDate, isoDate } from "@/lib/dates";
 import { site } from "@/lib/site";
 import { poetHref, romanAuthor } from "@/lib/poets";
 import { useApi } from "@/lib/useApi.ts";
@@ -48,6 +49,16 @@ export default function PoemPage() {
   const description =
     `“${opening}” ${item.title} ${suffix}${item.book ? ` From the book ${item.book}.` : ""}`;
 
+  // Dates mirror the server's static rendering (api/seo.py): a last-updated
+  // line only when a day actually separates it from publication — the two
+  // columns land microseconds apart on insert, and "Published x, last
+  // updated x" on every verse would be noise, not a signal.
+  const dateStamp = `Published ${formatDate(item.createdAt)}`;
+  const lastUpdated =
+    item.updatedAt && isoDate(item.updatedAt) !== isoDate(item.createdAt)
+      ? ` · Last updated ${formatDate(item.updatedAt)}`
+      : "";
+
   return (
     <>
       {/* Title/description pattern mirrored in api/seo.py. */}
@@ -61,6 +72,8 @@ export default function PoemPage() {
             name: item.title,
             author: { "@type": "Person", name: item.author || site.fullName },
             inLanguage: "ur",
+            datePublished: isoDate(item.createdAt),
+            dateModified: isoDate(item.updatedAt ?? item.createdAt),
           },
           {
             "@context": "https://schema.org",
@@ -103,6 +116,10 @@ export default function PoemPage() {
           )}
         </p>
         {item.book && <p className="mt-1 text-sm text-muted">{item.book}</p>}
+        <p className="mt-1 text-xs text-muted">
+          {dateStamp}
+          {lastUpdated}
+        </p>
 
         <div aria-hidden="true" className="rule-accent mt-6" />
 

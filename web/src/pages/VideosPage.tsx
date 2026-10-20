@@ -1,6 +1,7 @@
 import Seo from "@/components/Seo.tsx";
 import { ErrorNote, Loading } from "@/components/Feedback.tsx";
 import { getVideos } from "@/lib/api.ts";
+import { isoDate } from "@/lib/dates";
 import { youtubeId } from "@/lib/videos";
 import { useApi } from "@/lib/useApi";
 
@@ -15,10 +16,28 @@ export default function VideosPage() {
 
   return (
     <>
-      {/* Copy mirrored in api/seo.py. */}
+      {/* Copy mirrored in api/seo.py, which also renders the VideoObject
+          graph below for crawlers that skip JavaScript. datePublished is the
+          day the video was published on this site — the only date either
+          end can verify; uploadDate would claim a YouTube date we cannot. */}
       <Seo
         title="Urdu Poetry Videos"
         description="Watch Urdu poetry videos by Mujahid Sajjad — ghazal and shayari readings on YouTube."
+        jsonLd={
+          playable.length > 0
+            ? playable.map((video) => ({
+                "@context": "https://schema.org",
+                "@type": "VideoObject",
+                name: video.description || "Urdu poetry video",
+                description: video.description || "Urdu poetry video by Mujahid Sajjad.",
+                thumbnailUrl: `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`,
+                contentUrl: `https://www.youtube.com/watch?v=${video.id}`,
+                embedUrl: `https://www.youtube-nocookie.com/embed/${video.id}`,
+                inLanguage: "ur",
+                datePublished: isoDate(video.createdAt),
+              }))
+            : undefined
+        }
       />
 
       <section className="border-b border-line bg-cream-50">

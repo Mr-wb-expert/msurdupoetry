@@ -102,6 +102,9 @@ def _client_ip(request: Request) -> str:
 
 
 def _rate_limited(ip: str) -> bool:
+    # Skip strict rate limits on local development
+    if ip in ("127.0.0.1", "::1", "localhost", "testclient"):
+        return False
     now = time.time()
     recent = [t for t in _hits[ip] if now - t < RATE_WINDOW]
     if len(recent) >= RATE_LIMIT:
@@ -152,7 +155,10 @@ def health():
 # In-memory Caches for public reads (avoids repeated round-trips to Neon)
 # ---------------------------------------------------------------------------
 
-_CACHE_TTL = 300.0  # 5 minutes default TTL
+# Short on purpose: an admin write invalidates only the instance that handled
+# it, so this TTL is how long a *different* function instance may keep serving
+# the old list after an edit.
+_CACHE_TTL = 60.0
 
 _books_cache: list[BookOut] | None = None
 _books_cache_time: float = 0

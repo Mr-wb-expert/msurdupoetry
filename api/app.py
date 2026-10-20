@@ -53,14 +53,15 @@ _ROOT = str(Path(__file__).resolve().parent.parent)
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from fastapi import Depends, FastAPI  # noqa: E402
+from fastapi import Depends, FastAPI, Request  # noqa: E402
 from fastapi.responses import FileResponse, Response  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
+from sqlalchemy import func  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
 from api.db import Base, engine, get_db  # noqa: E402
-from api.models import Book, MediaFile, Poem  # noqa: E402
-from api.poets import POETS  # noqa: E402
+from api.models import Book, MediaFile, Poem, Video  # noqa: E402
+from api.poets import POETS, by_slug  # noqa: E402
 from api.routes import _books_query, admin, public, public_review  # noqa: E402
 from api import seo  # noqa: E402
 from api.seed import _add_missing_columns  # noqa: E402
@@ -90,17 +91,14 @@ app.include_router(public_review, prefix="/api")
 app.include_router(admin, prefix="/api")
 
 
-# Public lists barely change and every visitor used to hit Neon for them.
-# max-age keeps repeat visits in the browser; s-maxage lets Vercel's edge hold
-# the response for a minute, so the database is touched on a miss only.
-# Admin routes are private and /health must answer freshly, so both are left
-# out; non-GETs never reach this branch.
-#
-# A single-verse/book read must reflect an admin edit immediately, so those
-# are not edge-cached at all: the admin saves, then the public page (and the
-# admin form) read the fresh row. Vercel's edge cache is keyed on the URL and
-# cannot be purged from this function without a deploy token, so a stale
-# window on the lists is the cost of the caching.
+# No HTTP-level caching on API reads. An admin edit must be visible on the
+# public pages the moment it is saved, and Vercel's edge cache is keyed on the
+# URL — it cannot be purged from this function, so the old s-maxage showed a
+# stale book list for minutes after every edit (the admin list dodged it with
+# a ?t= cache-buster; the home page had no such luck).
+# The database is still protected, just by the layer admin writes can actually
+# invalidate: routes.py keeps in-memory caches and the write routes clear them.
+# Non-GETs never reach this branch.
 @app.middleware("http")
 async def cache_public_reads(request, call_next):
     import time
@@ -108,22 +106,8 @@ async def cache_public_reads(request, call_next):
     response = await call_next(request)
     duration_ms = (time.perf_counter() - start_time) * 1000.0
 
-    path = request.url.path
-    if (
-        request.method == "GET"
-        and path.startswith("/api/")
-        and not path.startswith("/api/admin")
-        and path != "/api/health"
-    ):
-        single_read = path.count("/") == 3 and (
-            path.startswith("/api/poems/")
-            or path.startswith("/api/poets/")
-            or path.startswith("/api/books/")
-        )
-        # Protect database by caching public lists at edge for 3 minutes, while allowing instant reads on singles
-        response.headers["Cache-Control"] = (
-            "no-store" if single_read else "public, max-age=180, s-maxage=180, stale-while-revalidate=120"
-        )
+    if request.method == "GET" and request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
 
     # Diagnostic header to observe processing latency in network tab
     response.headers["X-Response-Time"] = f"{duration_ms:.1f}ms"
@@ -197,9 +181,66 @@ def sitemap(db: Session = Depends(get_db)) -> Response:
     urls += [f"poems/{slug}" for (slug,) in db.query(Poem.slug).order_by(Poem.created_at.desc()).all()]
     urls += [f"poets/{poet['slug']}" for poet in POETS]
 
+    # Real dates, not today() on every line. A uniform lastmod is the one
+    # date signal every engine reads and none of them believe; a book's own
+    # created/edited pair is when that page actually changed. Pages that only
+    # list content (the static routes, the poet hubs) take the newest stamp of
+    # the content they show — that is when they last changed too.
+    def _day(value) -> date | None:
+        return value.date() if value else None
+
+    book_dates = {
+        slug: _day(updated or created)
+        for slug, created, updated in db.query(
+            Book.slug, Book.created_at, Book.updated_at
+        ).all()
+    }
+    poem_dates = {
+        slug: _day(updated or created)
+        for slug, created, updated in db.query(
+            Poem.slug, Poem.created_at, Poem.updated_at
+        ).all()
+    }
+    # Author (as saved on the row) -> newest verse, for the poet hubs.
+    poet_stamps = {
+        author: stamp
+        for author, stamp in db.query(
+            Poem.author, func.max(func.coalesce(Poem.updated_at, Poem.created_at))
+        ).group_by(Poem.author)
+        .all()
+    }
+    newest = max(
+        (
+            stamp
+            for stamp in [
+                *(d for d in book_dates.values() if d),
+                *(d for d in poem_dates.values() if d),
+                *(_day(v) for (v,) in db.query(Video.created_at).all() if v),
+            ]
+        ),
+        default=None,
+    )
+
+    def lastmod(path: str) -> str:
+        stamp: date | None = None
+        if path.startswith("books/"):
+            stamp = book_dates.get(path.removeprefix("books/"))
+        elif path.startswith("poems/"):
+            stamp = poem_dates.get(path.removeprefix("poems/"))
+        elif path.startswith("poets/"):
+            poet = by_slug(path.removeprefix("poets/"))
+            if poet:
+                stamps = [
+                    value.date()
+                    for alias in poet["aliases"]
+                    if (value := poet_stamps.get(alias)) is not None
+                ]
+                stamp = max(stamps, default=None)
+        return (stamp or newest or date.today()).isoformat()
+
     body = "".join(
         f"<url><loc>{escape(origin)}/{escape(path)}</loc>"
-        f"<lastmod>{date.today().isoformat()}</lastmod></url>"
+        f"<lastmod>{lastmod(path)}</lastmod></url>"
         for path in urls
     )
     xml_content = (
@@ -236,6 +277,40 @@ def robots() -> Response:
     )
 
 
+@app.get("/llms.txt", include_in_schema=False)
+def llms_txt() -> Response:
+    """A plain-text orientation for the smaller AI fetchers.
+
+    Google's guidance is that Googlebot never reads llms.txt, so this is not
+    a Google lever — it exists for the engines that may, and a file this cheap
+    to serve earns its keep at one request a day. Every URL in it is one the
+    site actually serves.
+    """
+    origin = SITE_URL or "http://localhost:8000"
+    return Response(
+        content=(
+            "# Mujahid Sajjad — msurdupoetry.com\n"
+            "\n"
+            "> The digital library of Prof. Syed Mujahid Sajjad, Urdu poet and "
+            "Associate Professor of English at Govt. Graduate College Burewala. "
+            "Every book and verse is free to read online, no account needed.\n"
+            "\n"
+            "## Primary pages\n"
+            f"- [{origin}/about]({origin}/about): biography, FAQs, bibliography\n"
+            f"- [{origin}/books]({origin}/books): every book — read online or download PDF\n"
+            f"- [{origin}/poems]({origin}/poems): ghazals and nazms in Urdu\n"
+            f"- [{origin}/poets]({origin}/poets): poet hubs with their verses\n"
+            f"- [{origin}/videos]({origin}/videos): recitations on YouTube\n"
+            "\n"
+            "## Optional\n"
+            f"- [{origin}/sitemap.xml]({origin}/sitemap.xml): every indexed URL\n"
+            f"- [{origin}/robots.txt]({origin}/robots.txt): crawl rules\n"
+        ),
+        media_type="text/plain; charset=utf-8",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
 if DIST.is_dir():
     if (DIST / "assets").is_dir():
         app.mount("/assets", StaticFiles(directory=DIST / "assets"), name="assets")
@@ -245,7 +320,7 @@ if DIST.is_dir():
     _SHELL = (DIST / "index.html").read_text(encoding="utf-8")
 
     @app.get("/{spa_path:path}", include_in_schema=False)
-    def spa(spa_path: str, db: Session = Depends(get_db)):
+    def spa(spa_path: str, request: Request, db: Session = Depends(get_db)):
         """Client-side routes have no file behind them, so anything that is not
         a real file in dist gets the app shell and the router takes over.
 
@@ -255,7 +330,12 @@ if DIST.is_dir():
 
         The head is rewritten per route first — see api.seo: without it every
         URL would ship one identical title, description and schema, which is
-        all a crawler that skips JavaScript ever sees."""
+        all a crawler that skips JavaScript ever sees.
+
+        Then the body: a fetcher that is not recognisably a browser also gets
+        the page's rendered text inside #root (seo.wants_static_body), which
+        is what lets a no-JS crawler read the poem or the FAQ at all. Browsers
+        get the empty root React expects, and noindex routes get neither."""
         candidate = (DIST / spa_path).resolve()
         if spa_path and candidate.is_file() and DIST.resolve() in candidate.parents:
             return FileResponse(candidate)
@@ -266,8 +346,13 @@ if DIST.is_dir():
         
         known = _get_known_slugs(db)
         meta = seo.head(path, db, SITE_URL or "http://localhost:8000")
+        static_body = ""
+        if not meta["noindex"] and seo.wants_static_body(
+            request.headers.get("user-agent")
+        ):
+            static_body = seo.body(path, db)
         return Response(
-            content=seo.apply(_SHELL, meta),
+            content=seo.apply(_SHELL, meta, static_body),
             status_code=200 if path in known else 404,
             media_type="text/html; charset=utf-8",
         )

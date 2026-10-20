@@ -21,7 +21,7 @@ from sqlalchemy import inspect, text
 from . import models  # noqa: F401  (imported so the metadata is registered)
 from .auth import hash_password
 from .db import Base, SessionLocal, engine, utcnow
-from .models import Admin, Book
+from .models import Admin, Book, Poem
 
 # Slugs are written out explicitly rather than derived from the title: these
 # URLs are already public, and slugify() would turn "An Article on the Poetry
@@ -145,6 +145,32 @@ def _add_missing_columns() -> None:
         db.commit()
         db.close()
         print("added books.created_at")
+
+    if "books" in tables and "updated_at" not in {
+        c["name"] for c in inspector.get_columns("books")
+    }:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE books ADD COLUMN updated_at TIMESTAMP"))
+        # Backfill from created_at: a book nobody has edited since was last
+        # touched when it was added, and lastmod must not claim otherwise.
+        db = SessionLocal()
+        for book in db.query(Book).all():
+            book.updated_at = book.created_at or utcnow()
+        db.commit()
+        db.close()
+        print("added books.updated_at")
+
+    if "poems" in tables and "updated_at" not in {
+        c["name"] for c in inspector.get_columns("poems")
+    }:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE poems ADD COLUMN updated_at TIMESTAMP"))
+        db = SessionLocal()
+        for poem in db.query(Poem).all():
+            poem.updated_at = poem.created_at
+        db.commit()
+        db.close()
+        print("added poems.updated_at")
 
 
 def main() -> int:

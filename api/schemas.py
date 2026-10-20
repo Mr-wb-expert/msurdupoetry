@@ -102,6 +102,9 @@ class BookOut(BookBase):
     # Present so the home page can feature the newest book first. Null only
     # for a row written before the column existed and never migrated.
     created_at: datetime | None = None
+    # Last admin edit — the pages' "Last updated" line reads it through the
+    # client, so it travels the same way created_at does.
+    updated_at: datetime | None = None
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
 
 
@@ -135,6 +138,8 @@ class PoemOut(PoemBase):
     # Present so a listing can be ordered and dated: the admin dashboard sorts
     # by it, and the sitemap already reads it off the model.
     created_at: datetime
+    # Last admin edit — feeds the poem page's visible dates and dateModified.
+    updated_at: datetime | None = None
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
 
 

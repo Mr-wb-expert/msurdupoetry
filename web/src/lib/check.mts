@@ -11,6 +11,7 @@
 import assert from "node:assert/strict";
 
 import { driveFileId, downloadUrl, embedUrl, filterBooks, sortBooks } from "./books.ts";
+import { formatDate, isoDate } from "./dates.ts";
 import { youtubeId } from "./videos.ts";
 import type { Book } from "./types.ts";
 
@@ -40,6 +41,7 @@ const book = (over: Partial<Book>): Book => ({
   publication: null,
   sortOrder: 0,
   createdAt: "2026-01-01T00:00:00",
+  updatedAt: null,
   ...over,
 });
 
@@ -182,6 +184,24 @@ check("sorting does not mutate its input", () => {
   const original = library.map((b) => b.slug);
   sortBooks(library, "za");
   assert.deepEqual(library.map((b) => b.slug), original);
+});
+
+console.log("dates");
+
+check("a full ISO stamp renders as a plain date", () => {
+  assert.equal(formatDate("2026-03-05T23:59:59"), "5 March 2026");
+});
+
+check("the time of day never changes the day shown", () => {
+  // Only the date part is read: api/seo.py formats the same instant with
+  // strftime("%B %Y") for crawlers, and a 23:59 UTC stamp must not render
+  // as two different days on the two sides of a render.
+  assert.equal(formatDate("2026-03-05T00:00:00"), formatDate("2026-03-05T23:59:59"));
+  assert.equal(isoDate("2026-03-05T23:59:59"), "2026-03-05");
+});
+
+check("months are long-form English on every machine", () => {
+  assert.equal(formatDate("2025-01-15T09:00:00"), "15 January 2025");
 });
 
 console.log(`web check: ${passed} assertions passed`);
