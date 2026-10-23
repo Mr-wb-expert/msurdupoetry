@@ -180,7 +180,11 @@ All five top changes and the honorable mention are implemented and covered by te
 
 **Also fixed en route:** `/about`'s meta description duplicated ", Government of the Punjab" after hydration (client template appended it to an `affiliation` that already ends with it) — now byte-identical with `PAGE_COPY`.
 
-**Verified:** `npm run typecheck`, `npm run lint`, `npm run check` (26 assertions, incl. 3 date-format), `npm run build`, `python -m api.check` (148 assertions — new `geo` section: 12, `dates`: 5, `llms.txt`: 1).
+### 11.1 Indexing fixes (2026-10-23)
+
+Search Console reported two new non-indexing reasons on 2026-10-22: *Duplicate, Google chose different canonical than user* and *Not found (404)*. Every page answered 200 on four host/scheme combinations (`http`/`https` × bare/`www`) plus the trailing-slash variant, and `/index.html` served the untouched shell with no canonical at all — Google grouped the copies and picked its own canonical. Fixed in `app.py`'s `canonical_redirects` middleware: 301 to `https://www.msurdupoetry.com` for the bare domain, `http`, any trailing slash, and `/index.html` (query string preserved; host derived from `SITE_URL`). 404s were checked end to end — a 12-URL sitemap sample and every sitemap URL are 200; the reported ones are dead URLs Google kept from the old soft-404 era, and they now 404 correctly with `noindex` instead of serving an empty 200.
+
+**Verified:** `npm run typecheck`, `npm run lint`, `npm run check` (26 assertions, incl. 3 date-format), `npm run build`, `python -m api.check` (153 assertions — new `geo` section: 12, `dates`: 5, `llms.txt`: 1, `canonical redirects`: 5).
 
 ---
 

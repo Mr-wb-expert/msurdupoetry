@@ -30,6 +30,12 @@ if os.path.exists(_TMP_DB):
     os.remove(_TMP_DB)
 os.environ["DATABASE_URL"] = f"sqlite:///{_TMP_DB}"
 os.environ["ADMIN_TOKEN_SECRET"] = "self-check-secret"
+# Production origin: the canonical-redirect tests below are host-based, so the
+# origin the app believes it serves has to be the real one. That https origin
+# would also make auth.py mark the session cookie Secure, which the in-process
+# http test client then refuses to send back — so the cookie stays plain here.
+os.environ["SITE_URL"] = "https://www.msurdupoetry.com"
+os.environ["COOKIE_SECURE"] = "0"
 os.environ.pop("ADMIN_USERNAME", None)
 os.environ.pop("ADMIN_PASSWORD", None)
 
@@ -810,6 +816,49 @@ if DIST.is_dir():
         and r.json()["updatedAt"] != "2000-01-01T00:00:00",
         r.text,
     )
+
+print("canonical redirects")
+prod_https = {"host": "www.msurdupoetry.com", "x-forwarded-proto": "https"}
+
+r = client.get("/poems", headers=prod_https, follow_redirects=False)
+check("canonical URL is served", r.status_code == 200, f"{r.status_code}")
+
+r = client.get("/poems/", headers=prod_https, follow_redirects=False)
+check(
+    "trailing slash 301s to the clean URL",
+    r.status_code == 301
+    and r.headers["location"] == "https://www.msurdupoetry.com/poems",
+    f"{r.status_code} {r.headers.get('location')}",
+)
+
+r = client.get(
+    "/poems", headers={"host": "msurdupoetry.com", "x-forwarded-proto": "https"},
+    follow_redirects=False,
+)
+check(
+    "bare domain 301s to www",
+    r.status_code == 301
+    and r.headers["location"] == "https://www.msurdupoetry.com/poems",
+    f"{r.status_code} {r.headers.get('location')}",
+)
+
+r = client.get(
+    "/poems?page=2", headers={"host": "www.msurdupoetry.com", "x-forwarded-proto": "http"},
+    follow_redirects=False,
+)
+check(
+    "http 301s to https and keeps the query",
+    r.status_code == 301
+    and r.headers["location"] == "https://www.msurdupoetry.com/poems?page=2",
+    f"{r.status_code} {r.headers.get('location')}",
+)
+
+r = client.get("/index.html", headers=prod_https, follow_redirects=False)
+check(
+    "index.html 301s to the root",
+    r.status_code == 301 and r.headers["location"] == "https://www.msurdupoetry.com/",
+    f"{r.status_code} {r.headers.get('location')}",
+)
 
 print(f"api check: {passed} assertions passed")
 

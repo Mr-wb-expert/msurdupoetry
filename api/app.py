@@ -53,8 +53,10 @@ _ROOT = str(Path(__file__).resolve().parent.parent)
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
+from urllib.parse import urlparse  # noqa: E402
+
 from fastapi import Depends, FastAPI, Request  # noqa: E402
-from fastapi.responses import FileResponse, Response  # noqa: E402
+from fastapi.responses import FileResponse, RedirectResponse, Response  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from sqlalchemy import func  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
@@ -112,6 +114,37 @@ async def cache_public_reads(request, call_next):
     # Diagnostic header to observe processing latency in network tab
     response.headers["X-Response-Time"] = f"{duration_ms:.1f}ms"
     return response
+
+
+# One URL per page. Search Console (Oct 2026) reported "Duplicate, Google chose
+# different canonical than user": msurdupoetry.com, www.msurdupoetry.com, http
+# and trailing-slash variants all answered 200 with the same content, so Google
+# grouped them and picked its own canonical. A 301 is the signal Google acts on;
+# the <link rel=canonical> from api.seo is only a hint.
+# /index.html is the same bug in file form: serving the untouched shell there
+# ships no canonical at all, a second copy of the home page.
+@app.middleware("http")
+async def canonical_redirects(request: Request, call_next):
+    site = urlparse(SITE_URL)
+    host = request.headers.get("host", "").split(":")[0].lower()
+    # Only safe methods: a 301 would turn a POST into a GET and silently drop
+    # the admin's login body.
+    if request.method in ("GET", "HEAD") and site.netloc and host in {
+        site.netloc,
+        site.netloc.removeprefix("www."),
+    }:
+        path = request.url.path
+        clean = path[: -len("index.html")].rstrip("/") if path.endswith("/index.html") else path
+        clean = clean.rstrip("/") or "/"
+        proto = (
+            request.headers.get("x-forwarded-proto") or request.url.scheme
+        ).split(",")[0].strip().lower()
+        if host != site.netloc or proto != "https" or path != clean:
+            target = f"https://{site.netloc}{clean}"
+            if request.url.query:
+                target += f"?{request.url.query}"
+            return RedirectResponse(target, status_code=301)
+    return await call_next(request)
 
 # Uploaded covers, served from their database row: the production filesystem
 # is read-only and ephemeral, so a file written there could never be kept or
