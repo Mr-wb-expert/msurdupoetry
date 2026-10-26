@@ -76,9 +76,12 @@ export default function Seo({
   useEffect(() => {
     document.title = title === SITE_NAME ? title : `${title} — ${SITE_NAME}`;
 
-    // The canonical URL is this exact page: without it the query strings a
-    // share link carries would split one page's ranking across several URLs.
-    const url = window.location.origin + window.location.pathname;
+    // The canonical URL is this exact page under the canonical production origin:
+    // without it, bare domain visits, preview deploys or query strings split rankings.
+    const CANONICAL_ORIGIN = "https://www.msurdupoetry.com";
+    const rawPath = window.location.pathname.replace(/\/+$/, "");
+    const cleanPath = rawPath === "" ? "/" : rawPath;
+    const url = `${CANONICAL_ORIGIN}${cleanPath}`;
     setCanonical(url);
     setMeta('meta[property="og:url"]', url);
     setMeta('meta[property="og:type"]', "website");
@@ -95,8 +98,8 @@ export default function Seo({
     const shareImage = noIndex ? null : (image ?? "/images/og-cover.png");
     if (shareImage) {
       // Social crawlers never resolve a site-relative image, so it is made
-      // absolute here, where the origin is known.
-      setMeta('meta[property="og:image"]', new URL(shareImage, window.location.origin).href);
+      // absolute here, with the canonical production origin.
+      setMeta('meta[property="og:image"]', new URL(shareImage, CANONICAL_ORIGIN).href);
       setMeta('meta[name="twitter:card"]', "summary_large_image");
     } else {
       removeMeta('meta[property="og:image"]');

@@ -3,6 +3,19 @@
   "installCommand": "pip install -r requirements.txt && npm install --prefix web",
   "buildCommand": "npm run build --prefix web",
   "outputDirectory": "web/dist",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "msurdupoetry.com"
+        }
+      ],
+      "destination": "https://www.msurdupoetry.com/:path*",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)",
