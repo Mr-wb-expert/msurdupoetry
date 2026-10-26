@@ -12,6 +12,8 @@ import { useApi } from "@/lib/useApi.ts";
  * full poem. The bio is the unique Urdu editorial content — without this page
  * a poet is only a name on a mixed feed, which is all the crawler used to see.
  */
+const CANONICAL_ORIGIN = "https://www.msurdupoetry.com";
+
 export default function PoetPage() {
   const { slug = "" } = useParams();
   const poet = useApi(() => getPoet(slug), [slug]);
@@ -19,17 +21,14 @@ export default function PoetPage() {
   if (poet.error) return <PoetNotFound />;
   if (poet.loading || !poet.data) {
     return (
-      <>
-        <Seo title="Loading" />
-        <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
-          <Loading label="Loading poet and verses" />
-        </div>
-      </>
+      <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
+        <Loading label="Loading poet and verses" />
+      </div>
     );
   }
 
   const item = poet.data;
-  const poetUrl = `${window.location.origin}/poets/${item.slug}`;
+  const poetUrl = `${CANONICAL_ORIGIN}/poets/${item.slug}`;
   // Mirrors the head rule in api/seo.py: the roman name leads, because that is
   // what the queries look like ("jaun elia poetry", not the Urdu script).
   const description =
@@ -57,7 +56,7 @@ export default function PoetPage() {
                 "@type": "ListItem",
                 position: 1,
                 name: "Poets",
-                item: `${window.location.origin}/poets`,
+                item: `${CANONICAL_ORIGIN}/poets`,
               },
               {
                 "@type": "ListItem",

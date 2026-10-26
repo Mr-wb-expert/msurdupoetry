@@ -360,13 +360,26 @@ def head(path: str, db, origin: str) -> dict:
             description = f"“{opening}” {poem.title} {suffix}"
             if poem.book:
                 description += f" From the book {poem.book}."
+            poet = _poet_for(poem.author)
+            poet_url = f"{origin}/poets/{poet['slug']}" if poet else None
             graph = [
                 {
                     "@context": "https://schema.org",
                     "@type": "CreativeWork",
                     "name": poem.title,
-                    "author": {"@type": "Person", "name": poem.author or FULL_NAME},
+                    "headline": poem.title,
+                    "author": {
+                        "@type": "Person",
+                        "name": poem.author or FULL_NAME,
+                        **({"url": poet_url} if poet_url else {}),
+                    },
                     "inLanguage": "ur",
+                    "genre": kind,
+                    "publisher": {
+                        "@type": "Person",
+                        "name": FULL_NAME,
+                        "url": f"{origin}/",
+                    },
                     "datePublished": _iso_date(poem.created_at),
                     "dateModified": _iso_date(poem.updated_at or poem.created_at),
                 },
@@ -614,7 +627,7 @@ def body(path: str, db) -> str:
         return _book_body(book) if book else ""
     if path.startswith("poems/"):
         poem = db.query(Poem).filter(Poem.slug == path.removeprefix("poems/")).first()
-        return _poem_body(poem) if poem else ""
+        return _poem_body(poem, db) if poem else ""
     if path.startswith("poets/"):
         poet = by_slug(path.removeprefix("poets/"))
         return _poet_body(db, poet) if poet else ""
@@ -896,7 +909,7 @@ def _book_body(book: Book) -> str:
     )
 
 
-def _poem_body(poem: Poem) -> str:
+def _poem_body(poem: Poem, db=None) -> str:
     author = poem.author or "Mujahid Sajjad"
     poet = _poet_for(poem.author)
     stamps = f"Published {_date_str(poem.created_at)}"
@@ -907,17 +920,56 @@ def _poem_body(poem: Poem) -> str:
     if poem.updated_at and poem.updated_at.date() != poem.created_at.date():
         stamps += f" · Last updated {_date_str(poem.updated_at)}"
     stanzas = re.split(r"\n{2,}", (poem.body or "").replace("\r\n", "\n"))
+
+    # Author biography snippet if known
+    bio_html = ""
+    poet_link_html = f"<p>{_e(author)}</p>"
+    if poet:
+        p_name = poet["name"]
+        p_urdu = poet["urdu"]
+        p_bio = poet["bio"]
+        p_slug = poet["slug"]
+        poet_link_html = f"<p>{_link(f'/poets/{p_slug}', author)}</p>"
+        if p_bio:
+            bio_html = (
+                '<section style="margin-top:2rem;border-top:1px solid #e5e5e5;padding-top:1.5rem">'
+                f'<h2>About {_e(p_name)} ({_e(p_urdu)})</h2>'
+                f'<p lang="ur" dir="rtl">{_e(p_bio)}</p>'
+                f'<p>{_link(f"/poets/{p_slug}", f"Read all poetry by {p_name}")}</p>'
+                '</section>'
+            )
+
+    # Related poems by the same author to provide internal links and combat thin content
+    related_html = ""
+    if db is not None:
+        related = (
+            db.query(Poem.slug, Poem.title, Poem.type)
+            .filter(Poem.author == poem.author, Poem.slug != poem.slug)
+            .order_by(Poem.created_at.desc())
+            .limit(4)
+            .all()
+        )
+        if related:
+            items = "".join(
+                f'<li>{_link(f"/poems/{p.slug}", p.title)} ({_e(p.type or "Poem")})</li>'
+                for p in related
+            )
+            related_html = (
+                '<section style="margin-top:2rem">'
+                f'<h2>More Urdu poetry by {_e(roman_name(poem.author) or author)}</h2>'
+                f'<ul>{items}</ul>'
+                '</section>'
+            )
+
     return (
         f'<nav>{_link("/poems", "Verses")} / {_e(poem.title)}</nav>'
         f"<h1>{_e(poem.title)}</h1>"
-        + (
-            f"<p>{_link(f'/poets/{poet['slug']}', author)}</p>"
-            if poet
-            else f"<p>{_e(author)}</p>"
-        )
+        + poet_link_html
         + (f"<p>{_e(poem.book)}</p>" if poem.book else "")
         + f"<p>{_e(stamps)}</p>"
         + '<div lang="ur">'
         + "".join(f'<p style="white-space:pre-line">{_e(s)}</p>' for s in stanzas)
         + "</div>"
+        + bio_html
+        + related_html
     )
