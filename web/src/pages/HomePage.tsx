@@ -194,15 +194,13 @@ export default function HomePage() {
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">{HOME_LEAD}</p>
 
             <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
-              {/* Poetry leads the page, so the main action is the verses;
-                  the second button covers the books. */}
-              <Link to="/poems" className="btn btn-primary">
-                Read verses
+              <Link to="/books" className="btn btn-primary">
+                Browse the library
                 <ArrowRight aria-hidden="true" className="size-4" />
               </Link>
-              <Link to={featured ? `/books/${featured.slug}` : "/books"} className="btn btn-secondary">
-                <BookOpen aria-hidden="true" className="size-4" />
-                Read the latest
+              <Link to="/poems" className="btn btn-secondary">
+                <Quote aria-hidden="true" className="size-4" />
+                Read verses
               </Link>
             </div>
 
