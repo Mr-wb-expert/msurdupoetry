@@ -1,4 +1,7 @@
+import { Feather, GraduationCap, ScrollText } from "lucide-react";
+
 import Seo from "@/components/Seo.tsx";
+import FaqSection from "@/components/FaqSection.tsx";
 import SectionHeading from "@/components/SectionHeading.tsx";
 import BookCard from "@/components/BookCard.tsx";
 import { site } from "@/lib/site";
@@ -17,19 +20,19 @@ const faq = [
   },
   {
     q: "Where can I read Magar Manzar Nahi Mera online?",
-    a: "The whole book is free on this site — open it in the browser from its Books page, or download the PDF from the same page. It is a collection of ghazals and nazms published in 2026, and reading it needs no account, no sign-up and no payment.",
+    a: "The whole book is free on this site, open it in the browser from its Books page, or download the PDF from the same page. It is a collection of ghazals and nazms published in 2026, and reading it needs no account, no sign-up and no payment.",
   },
   {
     q: "Are the books free to download?",
-    a: "Yes. Every book in the library — poetry, criticism and essays — is free to read online and free to download as a PDF. There is no account, no subscription and no payment at any point; each book page carries its own download link.",
+    a: "Yes. Every book in the library, poetry, criticism and essays, is free to read online and free to download as a PDF. There is no account, no subscription and no payment at any point; each book page carries its own download link.",
   },
   {
     q: "Who wrote the criticism of his poetry?",
-    a: "Ghazala Anjum wrote it. Her critical study, An Article on the Poetry of Mujahid Sajjad, is kept in the library alongside the collection — a reading of the poems' images, plainspoken idiom and the balance they hold between observation and feeling.",
+    a: "Ghazala Anjum wrote it. Her critical study, An Article on the Poetry of Mujahid Sajjad, is kept in the library alongside the collection, a reading of the poems' images, plainspoken idiom and the balance they hold between observation and feeling.",
   },
   {
     q: "What languages does he write in?",
-    a: "He writes poetry in Urdu — ghazals, nazms and essays — and teaches English as Associate Professor at Govt. Graduate College Burewala, Government of the Punjab. English is the language of his classroom; Urdu is the language of his verse, free to read here.",
+    a: "He writes poetry in Urdu, ghazals, nazms and essays, and teaches English as Associate Professor at Govt. Graduate College Burewala, Government of the Punjab. English is the language of his classroom; Urdu is the language of his verse, free to read here.",
   },
 ];
 
@@ -66,22 +69,32 @@ export default function AboutPage() {
       <section className="border-b border-line bg-cream-50">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[320px_1fr] lg:gap-16 lg:py-20">
           <figure className="mx-auto w-full max-w-xs lg:max-w-none">
-            <img
-              src={site.portrait}
-              alt={`${site.fullName}, ${site.title}`}
-              width={640}
-              height={800}
-              className="aspect-[4/5] w-full rounded-sm object-cover shadow-cover"
-            />
-            <figcaption className="mt-3 text-sm font-semibold text-muted">
-              {site.fullName} · {site.author}
+            <div className="relative">
+              {/* Offset frame behind the portrait — same as the home hero. */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 translate-x-3 translate-y-3 rounded-sm border-2 border-marigold-500/70"
+              />
+              <img
+                src={site.portrait}
+                alt={`${site.fullName}, ${site.title}`}
+                width={640}
+                height={800}
+                className="relative aspect-[4/5] w-full rounded-sm object-cover shadow-cover"
+              />
+            </div>
+            <figcaption className="mt-6 text-center lg:text-start">
+              <span className="block text-sm font-semibold text-ink-900">{site.fullName}</span>
+              <span lang="ur" dir="rtl" className="urdu-display mt-1 inline-block text-lg text-maroon-700">
+                سید مجاہد سجاد
+              </span>
             </figcaption>
           </figure>
 
           <div>
             <div className="text-center sm:text-start">
               <p className="eyebrow">About</p>
-              <h1 className="mt-3 text-4xl sm:text-5xl">{site.fullName}</h1>
+              <h1 className="mt-3 text-3xl sm:text-5xl">{site.fullName}</h1>
               <p className="mt-4 text-lg text-muted">{site.title}</p>
               {/* The entity question, asked plainly — AI answers lift a
                   question-shaped heading far more readily than a paragraph.
@@ -97,8 +110,8 @@ export default function AboutPage() {
             <p className="mt-4 max-w-2xl leading-relaxed text-ink-800">
               The collection <span className="font-medium text-ink-900">Magar Manzar Nahi Mera</span>{" "}
               gathers those ghazals and nazms between two covers, and Ghazala Anjum's critical
-              study of the work accompanies it in the library. Both are free here in full —
-              read online, or download the PDF — alongside essays and contributed writing from
+              study of the work accompanies it in the library. Both are free here in full,
+              read online, or download the PDF, alongside essays and contributed writing from
               across his years of teaching.
             </p>
 
@@ -120,26 +133,35 @@ export default function AboutPage() {
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <SectionHeading eyebrow="In his work" title="Poetry, criticism and teaching" />
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          <div className="lift rounded-sm border border-line bg-paper p-4 shadow-cover">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-marigold-700">
+        <div className="mt-8 grid gap-6 sm:grid-cols-3">
+          <div className="lift rounded-sm border border-line border-t-2 border-t-marigold-500 bg-paper p-6 shadow-cover">
+            <span className="grid size-10 place-items-center rounded-sm bg-maroon-700 text-paper">
+              <Feather aria-hidden="true" className="size-5" />
+            </span>
+            <h3 className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-marigold-700">
               Poetry
             </h3>
             <p className="mt-2 text-sm leading-relaxed text-muted">
-              Ghazals and nazms in Urdu — free to read on this site and in the PDF of{" "}
+              Ghazals and nazms in Urdu, free to read on this site and in the PDF of{" "}
               <span className="font-medium text-ink-800">Magar Manzar Nahi Mera</span>.
             </p>
           </div>
-          <div className="lift rounded-sm border border-line bg-paper p-4 shadow-cover">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-marigold-700">
+          <div className="lift rounded-sm border border-line border-t-2 border-t-marigold-500 bg-paper p-6 shadow-cover">
+            <span className="grid size-10 place-items-center rounded-sm bg-maroon-700 text-paper">
+              <ScrollText aria-hidden="true" className="size-5" />
+            </span>
+            <h3 className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-marigold-700">
               Criticism
             </h3>
             <p className="mt-2 text-sm leading-relaxed text-muted">
               A critical study by Ghazala Anjum accompanies the collection in the library.
             </p>
           </div>
-          <div className="lift rounded-sm border border-line bg-paper p-4 shadow-cover">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-marigold-700">
+          <div className="lift rounded-sm border border-line border-t-2 border-t-marigold-500 bg-paper p-6 shadow-cover">
+            <span className="grid size-10 place-items-center rounded-sm bg-maroon-700 text-paper">
+              <GraduationCap aria-hidden="true" className="size-5" />
+            </span>
+            <h3 className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-marigold-700">
               Teaching
             </h3>
             <p className="mt-2 text-sm leading-relaxed text-muted">
@@ -173,20 +195,12 @@ export default function AboutPage() {
         )}
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-        <SectionHeading eyebrow="FAQ" title="Common questions" />
-        <div className="mt-8 divide-y divide-line border-y border-line">
-          {faq.map(({ q, a }) => (
-            <div
-              key={q}
-              className="grid gap-2 py-5 sm:grid-cols-[minmax(0,22rem)_1fr] sm:gap-8"
-            >
-              <h3 className="text-base font-semibold">{q}</h3>
-              <p className="text-sm leading-relaxed text-muted">{a}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <FaqSection
+        faqs={faq}
+        title="About Mujahid Sajjad"
+        lead="Who he is, what he writes and how to read his books. Can't find your question? Ask us on WhatsApp."
+        className="border-t border-line bg-cream-50"
+      />
     </>
   );
 }

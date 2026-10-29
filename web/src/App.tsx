@@ -16,6 +16,9 @@ const PoetPage = lazy(() => import("./pages/PoetPage.tsx"));
 const AboutPage = lazy(() => import("./pages/AboutPage.tsx"));
 const VideosPage = lazy(() => import("./pages/VideosPage.tsx"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage.tsx"));
+const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage.tsx"));
+const TermsConditionsPage = lazy(() => import("./pages/TermsConditionsPage.tsx"));
+const ContactUsPage = lazy(() => import("./pages/ContactUsPage.tsx"));
 
 // The admin bundle is a separate download that no visitor ever needs.
 const AdminRoutes = lazy(() => import("./admin/AdminRoutes.tsx"));
@@ -27,7 +30,7 @@ export default function App() {
   useEffect(() => {
     // The document title is set per page by <Seo>; this is the fallback for
     // the first paint, before any page has mounted.
-    if (!isAdmin) document.title = "Mujahid Sajjad — Urdu Poet & Writer";
+    if (!isAdmin) document.title = "Urdu Poetry & Shayari | Mujahid Sajjad";
   }, [isAdmin]);
 
   // The admin panel has its own chrome and must never inherit the public
@@ -73,6 +76,9 @@ export default function App() {
             <Route path="/poets" element={<PoetsPage />} />
             <Route path="/poets/:slug" element={<PoetPage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms" element={<TermsConditionsPage />} />
+            <Route path="/contact" element={<ContactUsPage />} />
             <Route path="/videos" element={<VideosPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

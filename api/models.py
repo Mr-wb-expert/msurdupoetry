@@ -71,6 +71,12 @@ class Poem(Base):
     # The collection the verse is drawn from (Shayad, Gumaan ...). Blank when
     # unknown. Nullable for the same reason as type: old rows keep loading.
     book: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    # What this page offers that every other copy of the text does not:
+    # the verse in Roman Urdu (same line breaks as body), a word list
+    # ("word — meaning" per line) and a short explanation. All optional.
+    roman: Mapped[str | None] = mapped_column(Text, nullable=True, deferred=True)
+    meanings: Mapped[str | None] = mapped_column(Text, nullable=True, deferred=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True, deferred=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     # Bumped on every admin edit (see Book.updated_at); nullable so a table
     # created before this column can be altered in place.

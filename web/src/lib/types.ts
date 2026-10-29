@@ -69,6 +69,12 @@ export type Poem = {
   createdAt: string;
   /** Last admin edit — feeds the poem page's visible date and dateModified. */
   updatedAt: string | null;
+  /** The verse in Roman Urdu, same line breaks as body. Single-verse reads only. */
+  roman?: string | null;
+  /** "word — meaning", one per line. Single-verse reads only. */
+  meanings?: string | null;
+  /** Short explanation of the verse. Single-verse reads only. */
+  notes?: string | null;
 };
 
 /** One hub page in /poets. `urdu` is the display name and H1. */

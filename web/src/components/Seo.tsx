@@ -9,6 +9,10 @@ export type SeoProps = {
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
   /** Admin pages are not indexed and should not be in the sitemap either. */
   noIndex?: boolean;
+  /** False drops the " — Mujahid Sajjad" suffix (poem pages by other poets). */
+  brand?: boolean;
+  /** Language of the page's main content, written to <html lang>. */
+  lang?: "en" | "ur";
 };
 
 const SITE_NAME = "Mujahid Sajjad";
@@ -72,9 +76,13 @@ export default function Seo({
   image,
   jsonLd,
   noIndex = false,
+  brand = true,
+  lang = "en",
 }: SeoProps) {
   useEffect(() => {
-    document.title = title === SITE_NAME ? title : `${title} — ${SITE_NAME}`;
+    // Mirrors _full_title in api/seo.py.
+    document.title = !brand || title.includes(SITE_NAME) ? title : `${title} | ${SITE_NAME}`;
+    document.documentElement.lang = lang;
 
     // The canonical URL is this exact page under the canonical production origin:
     // without it, bare domain visits, preview deploys or query strings split rankings.
@@ -123,7 +131,7 @@ export default function Seo({
     }
 
     return () => document.getElementById(scriptId)?.remove();
-  }, [title, description, image, jsonLd, noIndex]);
+  }, [title, description, image, jsonLd, noIndex, brand, lang]);
 
   return null;
 }

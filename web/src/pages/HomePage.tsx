@@ -3,17 +3,43 @@ import { Link } from "react-router-dom";
 import { ArrowRight, BookOpen, Download, Languages, Quote } from "lucide-react";
 
 import Seo from "@/components/Seo.tsx";
+import FaqSection from "@/components/FaqSection.tsx";
 import SectionHeading from "@/components/SectionHeading.tsx";
 import BookCover from "@/components/BookCover.tsx";
-import BookCard from "@/components/BookCard.tsx";
+import BookCarousel from "@/components/BookCarousel.tsx";
+import Carousel from "@/components/Carousel.tsx";
 import CoupletCard from "@/components/CoupletCard.tsx";
 import { EmptyNote, ErrorNote, Loading } from "@/components/Feedback.tsx";
 import { site } from "@/lib/site";
 import { useApi } from "@/lib/useApi.ts";
-import { getBooks, getPoems, getReviews, getVideos } from "@/lib/api.ts";
+import { getBooks, getPoems, getPoets, getReviews, getVideos } from "@/lib/api.ts";
 import { fromPoem } from "@/lib/couplets";
 import { youtubeId } from "@/lib/videos";
 import { categoryLabels, type Book, type Review } from "@/lib/types";
+
+// Mirrors HOME_LEAD and HOME_FAQ in api/seo.py, word for word: the site is
+// a library of many poets, curated by Mujahid Sajjad — not his work alone.
+const HOME_LEAD =
+  "A free library of Urdu poetry: the ghazals, nazms and shayari of Allama Iqbal, Mirza Ghalib, Faiz Ahmed Faiz, Jaun Elia, Ahmed Faraz, Parveen Shakir and more, in Urdu text you can copy, with the books of Prof. Syed Mujahid Sajjad, who curates it.";
+
+const HOME_FAQ = [
+  {
+    q: "Which Urdu poets can I read here?",
+    a: "The library holds ghazals, nazms and shayari by more than 25 poets, among them Allama Iqbal, Mirza Ghalib, Mir Taqi Mir, Faiz Ahmed Faiz, Ahmed Faraz, Jaun Elia, Parveen Shakir, Nasir Kazmi and Mohsin Naqvi. Each poet has a page with a biography and their verses.",
+  },
+  {
+    q: "Is the poetry in Urdu text I can copy?",
+    a: "Yes. Every ghazal and nazm is typed Urdu text in Nastaliq, not an image, so you can copy a couplet or share it on WhatsApp straight from the page, free, with no account.",
+  },
+  {
+    q: "Who runs this library?",
+    a: "Prof. Syed Mujahid Sajjad, an Urdu poet and Associate Professor of English at Govt. Graduate College Burewala. Alongside the classic poets, the library carries his own books, poetry, criticism and essays.",
+  },
+  {
+    q: "Can I download Urdu poetry books as PDF?",
+    a: "Yes. Every book in the library is free to read online and free to download as a PDF from its own page, no sign-up and no payment.",
+  },
+];
 
 export default function HomePage() {
   const library = useApi(getBooks);
@@ -21,23 +47,26 @@ export default function HomePage() {
   const poems = useApi(getPoems);
   const videos = useApi(getVideos);
 
+  const poets = useApi(getPoets);
+  // The site owner leads, then the poets with the most verses here.
+  const topPoets = useMemo(
+    () =>
+      [...(poets.data ?? [])]
+        .sort(
+          (a, b) =>
+            Number(b.slug === "mujahid-sajjad") - Number(a.slug === "mujahid-sajjad") ||
+            b.poemCount - a.poemCount,
+        )
+        .slice(0, 8),
+    [poets.data],
+  );
+
   const books = library.data ?? [];
   const verseCount = poems.data?.length ?? 0;
+  const reviewsList = reviews.data ?? [];
 
-  // Three random reviews per visit: reshuffled on reload/refresh from all approved reviews
-  const reviewPreview = useMemo(() => {
-    const pool = [...(reviews.data ?? [])];
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      const a = pool[i]!;
-      pool[i] = pool[j]!;
-      pool[j] = a;
-    }
-    return pool.slice(0, 3);
-  }, [reviews.data]);
-
-  // Three random verses per visit: reshuffled on the next page load, stable
-  // while the visitor stays (Fisher-Yates, then the first three).
+  // Nine random verses per visit: reshuffled on the next page load, stable
+  // while the visitor stays (Fisher-Yates, then the first nine).
   const poetryPreview = useMemo(() => {
     const pool = (poems.data ?? []).map(fromPoem);
     for (let i = pool.length - 1; i > 0; i--) {
@@ -46,7 +75,7 @@ export default function HomePage() {
       pool[i] = pool[j]!;
       pool[j] = a;
     }
-    return pool.slice(0, 3);
+    return pool.slice(0, 9);
   }, [poems.data]);
   // Newest first, so a book just added in the admin becomes the featured one
   // (the section under the hero) without anyone touching the sort order.
@@ -54,9 +83,10 @@ export default function HomePage() {
     (b.createdAt ?? "").localeCompare(a.createdAt ?? ""),
   );
   const featured: Book | undefined = recent[0];
-  // The shelf shows at most three, always a single row. "See all" takes the
+  // The shelf is a swipeable carousel of the newest twelve. "See all" takes the
   // reader to the full catalogue, which is where the rest live.
-  const shelf = recent.slice(0, 3);
+  // Skips recent[0]: it is the featured book just above the shelf.
+  const shelf = recent.slice(1, 13);
 
   // The newest video with a usable link. The section under the verses stays
   // hidden when there is none — the home page shows no empty state.
@@ -82,13 +112,14 @@ export default function HomePage() {
 
   const [openReview, setOpenReview] = useState<Review | null>(null);
 
+
   return (
     <>
       {/* Titles/descriptions mirror api/seo.py — change both, or the
           pre-hydration head and the settled one disagree. */}
       <Seo
-        title="Urdu Poetry & Shayari, Free Books Online"
-        description="Read the Urdu poetry of Mujahid Sajjad, Urdu poet and Associate Professor at Govt. Graduate College Burewala. Free ghazals, nazms and books online."
+        title="Urdu Poetry & Shayari | Iqbal, Ghalib, Faiz, Jaun Elia | Mujahid Sajjad"
+        description="Urdu poetry, shayari, ghazals and nazms of Iqbal, Ghalib, Faiz, Ahmed Faraz, Jaun Elia and Parveen Shakir in Urdu text, free to read, copy and share."
         jsonLd={{
           "@context": "https://schema.org",
           // Person lives in index.html — repeating it here would put two
@@ -97,57 +128,85 @@ export default function HomePage() {
             {
               "@type": "WebSite",
               name: site.author,
-              description: site.description,
+              description: HOME_LEAD,
               inLanguage: ["ur", "en"],
+            },
+            {
+              "@type": "FAQPage",
+              mainEntity: HOME_FAQ.map(({ q, a }) => ({
+                "@type": "Question",
+                name: q,
+                acceptedAnswer: { "@type": "Answer", text: a },
+              })),
             },
           ],
         }}
       />
 
       {/* Hero: the author and the promise of the site, side by side. */}
-      <section className="border-b border-line bg-cream-50">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.15fr_1fr] lg:py-24">
+      <section className="relative overflow-hidden border-b border-line bg-cream-50">
+        {/* A faint Nastaliq watermark — decoration only, so hidden from readers. */}
+        <span
+          aria-hidden="true"
+          lang="ur"
+          className="urdu-display pointer-events-none absolute -end-10 -top-6 select-none text-[11rem] leading-none text-maroon-700/[0.04] max-lg:hidden"
+        >
+          شاعری
+        </span>
+        {/* items-start, not center: centring the text against the taller
+            portrait pushed the heading far below the header. */}
+        <div className="relative mx-auto grid max-w-6xl items-start gap-12 px-4 pb-14 pt-12 sm:px-6 lg:grid-cols-[1.2fr_1fr] lg:pb-16 lg:pt-16">
           <div className="flex flex-col items-center text-center lg:items-start lg:text-start">
-            <p className="eyebrow">Books, free to read</p>
-            <h1 className="mt-4 text-5xl leading-[1.05] sm:text-6xl">
-              Urdu Poetry &amp; Shayari by Syed Mujahid Sajjad
+            <p className="eyebrow">Free Urdu poetry library</p>
+            <div aria-hidden="true" className="rule-accent mt-3" />
+            <h1 className="mt-5 text-[2rem] leading-[1.1] sm:text-5xl lg:text-6xl">
+              Urdu Poetry &amp; Shayari: Ghazals, Nazms and Books
             </h1>
-            <p className="mt-5 max-w-xl text-lg text-muted">{site.description}</p>
+            <p className="mt-4">
+              <span lang="ur" dir="rtl" className="urdu-display text-2xl text-maroon-700 sm:text-3xl">
+                اردو شاعری کی آن لائن لائبریری
+              </span>
+            </p>
+            <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">{HOME_LEAD}</p>
 
             <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
-              <Link to="/books" className="btn btn-primary">
-                Browse the library
+              {/* Poetry leads the page, so the main action is the verses;
+                  the second button covers the books. */}
+              <Link to="/poems" className="btn btn-primary">
+                Read verses
                 <ArrowRight aria-hidden="true" className="size-4" />
               </Link>
-              {featured && (
-                <Link to={`/books/${featured.slug}`} className="btn btn-secondary">
-                  <BookOpen aria-hidden="true" className="size-4" />
-                  Read the latest
-                </Link>
-              )}
+              <Link to={featured ? `/books/${featured.slug}` : "/books"} className="btn btn-secondary">
+                <BookOpen aria-hidden="true" className="size-4" />
+                Read the latest
+              </Link>
             </div>
 
-            <dl className="mt-10 flex flex-wrap justify-center gap-x-10 gap-y-4 border-t border-line pt-6 lg:justify-start">
-              <div>
-                <dt className="text-xs uppercase tracking-wider text-muted">Books</dt>
-                <dd className="text-lg font-semibold">
-                  {books.length ? `${books.length} · Free Access` : "Free Access"}
+            {/* Numbers first, label under: reads at a glance on a phone. */}
+            <dl className="mt-10 grid w-full max-w-md grid-cols-3 divide-x divide-line border-y border-line py-5 text-center lg:text-start [&>div]:px-4 [&>div:first-child]:ps-0">
+              <div className="flex flex-col-reverse">
+                <dt className="mt-1 text-xs uppercase tracking-wider text-muted">Free books</dt>
+                <dd className="text-2xl font-bold text-ink-950 sm:text-3xl">{books.length || "…"}</dd>
+              </div>
+              <div className="flex flex-col-reverse">
+                <dt className="mt-1 text-xs uppercase tracking-wider text-muted">Verses</dt>
+                <dd className="text-2xl font-bold text-ink-950 sm:text-3xl">
+                  {verseCount ? verseCount.toLocaleString() : "…"}
                 </dd>
               </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wider text-muted">Verses</dt>
-                <dd className="text-lg font-semibold">
-                  {verseCount ? `${verseCount} · Free to read` : "Free to read"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wider text-muted">Reading</dt>
-                <dd className="text-lg font-semibold">Online + Download</dd>
+              <div className="flex flex-col-reverse">
+                <dt className="mt-1 text-xs uppercase tracking-wider text-muted">Always free</dt>
+                <dd className="text-2xl font-bold text-ink-950 sm:text-3xl">₨0</dd>
               </div>
             </dl>
           </div>
 
-          <figure className="mx-auto w-full max-w-sm">
+          <figure className="relative mx-auto w-full max-w-[15rem] sm:max-w-sm">
+            {/* Offset frame behind the portrait, like a mounted print. */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 translate-x-4 translate-y-4 rounded-sm border-2 border-marigold-500/70"
+            />
             <img
               src={site.portrait}
               alt={`${site.fullName}, ${site.title}`}
@@ -155,24 +214,24 @@ export default function HomePage() {
               height={800}
               fetchPriority="high"
               decoding="async"
-              className="aspect-[4/5] w-full rounded-sm object-cover shadow-cover"
+              className="relative aspect-[4/5] w-full rounded-sm object-cover shadow-cover"
             />
-            <figcaption className="mt-3 text-center">
+            <figcaption className="relative -mt-8 ms-auto me-[-0.5rem] w-fit max-w-[85%] rounded-sm bg-maroon-700 px-4 py-3 text-paper shadow-cover sm:me-[-1.5rem]">
               <span className="block text-sm font-semibold">{site.fullName}</span>
-              <span className="block text-xs text-muted">{site.title}</span>
+              <span className="block text-xs text-cream-100">{site.title}</span>
             </figcaption>
           </figure>
         </div>
       </section>
 
       {/* How the library works: three promises the site keeps. */}
-      <section className="border-b border-line">
-        <ul className="mx-auto grid max-w-6xl gap-6 px-4 py-10 sm:px-6 sm:grid-cols-3">
+      <section className="border-b border-line bg-cream-50">
+        <ul className="mx-auto grid max-w-6xl gap-5 px-4 py-10 sm:grid-cols-3 sm:px-6">
           {[
             {
               icon: BookOpen,
               title: "Read online",
-              text: "Open the full book in the browser no download needed.",
+              text: "Open the full book in the browser, no download needed.",
             },
             {
               icon: Download,
@@ -187,23 +246,92 @@ export default function HomePage() {
           ].map((entry) => (
             <li
               key={entry.title}
-              className="lift rounded-sm border border-line border-t-2 border-t-marigold-500 bg-paper p-5 shadow-cover"
+              className="lift flex items-start gap-4 rounded-sm border border-line border-t-2 border-t-marigold-500 bg-paper p-5 shadow-cover"
             >
-              <span className="grid size-10 place-items-center rounded-full bg-maroon-700/10 text-maroon-700">
+              <span className="grid size-11 shrink-0 place-items-center rounded-sm bg-maroon-700 text-paper">
                 <entry.icon aria-hidden="true" className="size-5" />
               </span>
-              <p className="mt-3.5 text-base font-semibold">{entry.title}</p>
-              <p className="mt-1.5 text-sm text-muted">{entry.text}</p>
+              <div>
+                <p className="text-base font-semibold">{entry.title}</p>
+                <p className="mt-1 text-sm leading-relaxed text-muted">{entry.text}</p>
+              </div>
             </li>
           ))}
         </ul>
       </section>
 
+      {/* Verses first after the hero: the library is poetry before it is books. */}
+      {verseCount > 0 && (
+        <section className="border-t border-line">
+          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
+            {/* Random picks from the whole library, so mostly other poets'
+                verse — the old "From his own words" eyebrow misattributed them. */}
+            <SectionHeading
+              eyebrow="From the library"
+              title="Urdu Ghazals & Nazms"
+              lead="A few couplets picked at random on every visit, free to read and share."
+              action={
+                <Link to="/poems" className="text-sm font-semibold text-maroon-700 hover:text-maroon-800">
+                  Read more →
+                </Link>
+              }
+            />
+            <Carousel
+              items={poetryPreview}
+              getKey={(couplet) => couplet.id}
+              label="Verses"
+              autoPlayMs={3000}
+              renderItem={(couplet) => <CoupletCard couplet={couplet} />}
+            />
+          </div>
+        </section>
+      )}
+
+      {/* Poets: every hub one tap from the home page, the site owner first. */}
+      {topPoets.length > 0 && (
+        <section className="border-t border-line bg-maroon-700 text-paper">
+          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
+            <div className="flex flex-wrap items-end justify-between gap-4 text-center max-sm:justify-center sm:text-start">
+              <div className="w-full max-w-2xl sm:w-auto">
+                <p className="eyebrow eyebrow-light">The poets</p>
+                <h2 className="mt-3 text-2xl text-paper sm:text-3xl">Read by poet</h2>
+                <p className="mt-3 text-cream-100">
+                  Ghazals and nazms of the masters of Urdu poetry, each with a biography.
+                </p>
+              </div>
+              <Link to="/poets" className="text-sm font-semibold text-marigold-300 hover:text-paper">
+                All poets →
+              </Link>
+            </div>
+            <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {topPoets.map((poet) => (
+                <li key={poet.slug}>
+                  <Link
+                    to={`/poets/${poet.slug}`}
+                    className="flex h-full flex-col rounded-sm border border-paper/15 bg-paper/5 p-4 transition-colors hover:border-marigold-300 hover:bg-paper/10"
+                  >
+                    <span lang="ur" dir="rtl" className="urdu-display text-xl text-paper">
+                      {poet.urdu}
+                    </span>
+                    <span className="mt-2 text-sm font-semibold">{poet.name}</span>
+                    <span className="mt-0.5 text-xs text-cream-200">
+                      {poet.slug === "mujahid-sajjad"
+                        ? "Books & biography"
+                        : `${poet.poemCount} verses`}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
       {/* Featured book, laid out like its own detail page: cover and actions
           on the left, catalogue facts on the right. */}
       {library.loading && <Loading label="Loading the library" />}
       {featured && (
-        <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-20">
+        <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
           <div className="grid gap-10 lg:grid-cols-[300px_1fr]">
             <div>
               <Link
@@ -211,7 +339,7 @@ export default function HomePage() {
                 className="lift relative block overflow-hidden rounded-sm shadow-cover"
               >
                 <span className="absolute start-0 top-3 z-10 bg-maroon-700 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-paper shadow-sm">
-                  Recent Published
+                  Newest book
                 </span>
                 {featured.coverImage ? (
                   <img
@@ -226,7 +354,7 @@ export default function HomePage() {
                 )}
               </Link>
 
-              <div className="mt-5 space-y-2">
+              <div className="mt-5 grid gap-2">
                 <Link to={`/books/${featured.slug}`} className="btn btn-primary w-full">
                   <BookOpen aria-hidden="true" className="size-4" />
                   Read online
@@ -258,17 +386,17 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* The shelf: three books, one tidy row, with the full catalogue a click
-          away. Hidden when there is only the featured book, which would just
+      {/* The shelf: a swipeable row (one book per screen on phones), with the
+          full catalogue a click away. Hidden when there is only the featured book, which would just
           repeat it directly below itself. */}
       {books.length > 1 && (
         <section className="border-t border-line bg-cream-50">
-          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-20">
+          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
             <SectionHeading
               size="lg"
               eyebrow="The library"
               title="Books"
-              lead="Explore the literary works of Mujahid Sajjad."
+              lead="Poetry, criticism and essays, free to read online and to download as PDF."
               action={
                 <Link
                   to="/books"
@@ -278,46 +406,15 @@ export default function HomePage() {
                 </Link>
               }
             />
-            <ul className="mt-8 grid grid-cols-1 gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
-              {shelf.map((book) => (
-                <li key={book.slug}>
-                  <BookCard book={book} />
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
-
-      {/* Verses preview — three from the collection. */}
-      {verseCount > 0 && (
-        <section className="border-t border-line">
-          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-20">
-            <SectionHeading
-              eyebrow="From his own words"
-              title="Verses"
-              lead="Couplets from the collection, free to read and share."
-              action={
-                <Link to="/poems" className="text-sm font-semibold text-maroon-700 hover:text-maroon-800">
-                  Read more →
-                </Link>
-              }
-            />
-            <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {poetryPreview.map((couplet) => (
-                <li key={couplet.id} className="flex">
-                  <CoupletCard couplet={couplet} />
-                </li>
-              ))}
-            </ul>
+            <BookCarousel books={shelf} />
           </div>
         </section>
       )}
 
       {/* The newest video, when there is one. */}
       {latestVideo && (
-        <section className="border-t border-line bg-cream-50">
-          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-20">
+        <section className="border-t border-line">
+          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
             <SectionHeading
               eyebrow="Watch"
               title="Latest video"
@@ -350,7 +447,8 @@ export default function HomePage() {
       )}
 
       {/* Reader reviews. */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-20">
+      <section className="border-t border-line bg-cream-50">
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
         <SectionHeading
           eyebrow="From readers"
           title="What people say"
@@ -366,57 +464,118 @@ export default function HomePage() {
         {reviews.data && reviews.data.length === 0 && (
           <div className="mt-8">
             <EmptyNote title="No reviews yet">
-              Be the first — every book page has a review form.
+              Be the first: every book page has a review form.
             </EmptyNote>
           </div>
         )}
 
-        <ul className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {reviewPreview.map((review: Review) => {
-            const isLong = (review.body || "").length > 130;
-            return (
-              <li
-                key={review.id}
-                className="lift flex flex-col justify-between rounded-sm border border-line bg-paper p-5 shadow-cover transition-colors hover:border-maroon-700/30"
-              >
-                <div className="flex flex-1 flex-col justify-center">
-                  <Quote aria-hidden="true" className="size-5 text-marigold-500/80 mb-2" />
-                  <div
-                    onClick={() => isLong && setOpenReview(review)}
-                    className={`my-auto text-center ${isLong ? "cursor-pointer group" : ""}`}
-                    title={isLong ? "Click to read full review" : undefined}
-                  >
-                    <p className="py-1 line-clamp-4 whitespace-pre-line text-sm leading-[2.2] text-ink-800">
-                      {review.body}
-                    </p>
-                    {isLong && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenReview(review);
-                        }}
-                        className="mt-2 text-xs font-semibold text-maroon-700 hover:underline inline-block"
-                      >
-                        Read more →
-                      </button>
-                    )}
+        {reviewsList.length > 0 && (
+          <Carousel
+            items={reviewsList}
+            getKey={(review) => review.id}
+            label="Reader reviews"
+            autoPlayMs={3000}
+            renderItem={(review) => {
+              const isLong = (review.body || "").length > 130;
+              return (
+                <article className="lift flex w-full flex-col justify-between rounded-sm border border-line bg-paper p-5 shadow-cover transition-colors hover:border-maroon-700/30">
+                  <div className="flex flex-1 flex-col justify-center">
+                    <Quote aria-hidden="true" className="mb-2 size-5 text-marigold-500/80" />
+                    <div
+                      onClick={() => isLong && setOpenReview(review)}
+                      className={`my-auto text-center ${isLong ? "group cursor-pointer" : ""}`}
+                      title={isLong ? "Click to read full review" : undefined}
+                    >
+                      <p className="line-clamp-4 whitespace-pre-line py-1 text-sm leading-[2.2] text-ink-800">
+                        {review.body}
+                      </p>
+                      {isLong && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenReview(review);
+                          }}
+                          className="mt-2 inline-block text-xs font-semibold text-maroon-700 hover:underline"
+                        >
+                          Read more →
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                <div className="mt-4 border-t border-line/60 pt-3 text-left">
-                  <p className="text-xs font-semibold text-ink-950">{review.name}</p>
-                  <Link
-                    to={`/books/${review.bookSlug}`}
-                    className="mt-0.5 block text-xs text-muted hover:text-maroon-700"
-                  >
-                    on {review.bookTitle}
-                  </Link>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                  <div className="mt-4 border-t border-line/60 pt-3 text-start">
+                    <p className="text-xs font-semibold text-ink-950">{review.name}</p>
+                    <Link
+                      to={`/books/${review.bookSlug}`}
+                      className="mt-0.5 block text-xs text-muted hover:text-maroon-700"
+                    >
+                      on {review.bookTitle}
+                    </Link>
+                  </div>
+                </article>
+              );
+            }}
+          />
+        )}
+      </div>
+      </section>
+
+      {/* What the library is, as questions — mirrored in api/seo.py (HOME_FAQ)
+          and in this page's FAQPage schema. */}
+      <FaqSection
+        faqs={HOME_FAQ}
+        title="Questions about the library"
+        className="border-t border-line"
+      />
+
+      {/* Closing call to action: the last thing before the footer, so a
+          reader who scrolled this far gets one clear next step. */}
+      <section className="px-4 pb-16 pt-4 sm:px-6 lg:pb-20">
+        <div className="relative mx-auto max-w-6xl overflow-hidden rounded-sm bg-maroon-700 px-6 py-12 text-center text-paper shadow-cover sm:px-12 lg:py-16">
+          <span
+            aria-hidden="true"
+            lang="ur"
+            className="urdu-display pointer-events-none absolute -bottom-10 -start-6 select-none text-[9rem] leading-none text-paper/[0.06] max-sm:hidden"
+          >
+            غزل
+          </span>
+          <span
+            aria-hidden="true"
+            lang="ur"
+            className="urdu-display pointer-events-none absolute -end-6 -top-10 select-none text-[9rem] leading-none text-paper/[0.06] max-sm:hidden"
+          >
+            نظم
+          </span>
+          <div className="relative">
+            <p className="eyebrow eyebrow-light">Start reading</p>
+            <h2 className="mx-auto mt-3 max-w-2xl text-3xl text-paper sm:text-4xl">
+              Find your next favourite sher
+            </h2>
+            <p className="mt-3">
+              <span lang="ur" dir="rtl" className="urdu-display text-xl text-marigold-300">
+                اردو شاعری، مفت اور ہمیشہ کے لیے
+              </span>
+            </p>
+            <p className="mx-auto mt-4 max-w-xl text-cream-100">
+              {verseCount ? `${verseCount.toLocaleString()} ghazals and nazms` : "Ghazals and nazms"} by
+              the great Urdu poets, and every book free to read and download. No sign-up, no payment.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Link to="/poems" className="btn bg-paper text-maroon-700 hover:bg-cream-100">
+                <Quote aria-hidden="true" className="size-4" />
+                Read verses
+              </Link>
+              <Link to="/poets" className="btn border border-cream-300 text-paper hover:bg-maroon-800">
+                Browse poets
+              </Link>
+              <Link to="/books" className="btn border border-cream-300 text-paper hover:bg-maroon-800">
+                <Download aria-hidden="true" className="size-4" />
+                Free books
+              </Link>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Full review modal dialog */}

@@ -44,6 +44,7 @@ from .schemas import (
     LoginIn,
     MessageOut,
     PoemCreate,
+    PoemDetail,
     PoemOut,
     PoemUpdate,
     PoetDetail,
@@ -237,7 +238,7 @@ def list_poems(db: Session = Depends(get_db)):
     return serialized
 
 
-@public.get("/poems/{slug}", response_model=PoemOut)
+@public.get("/poems/{slug}", response_model=PoemDetail)
 def read_poem(slug: str, db: Session = Depends(get_db)):
     poem = db.query(Poem).filter(Poem.slug == slug).first()
     if poem is None:
@@ -569,7 +570,7 @@ def upload_cover(
     return book
 
 
-@admin.post("/poems", response_model=PoemOut, status_code=status.HTTP_201_CREATED)
+@admin.post("/poems", response_model=PoemDetail, status_code=status.HTTP_201_CREATED)
 def create_poem(payload: PoemCreate, db: Session = Depends(get_db), _: Admin = Depends(require_admin)):
     slug = _resolve_slug(db, Poem, payload.slug, payload.title)
     poem = Poem(**payload.model_dump(exclude={"slug"}), slug=slug)
@@ -580,7 +581,7 @@ def create_poem(payload: PoemCreate, db: Session = Depends(get_db), _: Admin = D
     return poem
 
 
-@admin.put("/poems/{slug}", response_model=PoemOut)
+@admin.put("/poems/{slug}", response_model=PoemDetail)
 def update_poem(
     slug: str, payload: PoemUpdate, db: Session = Depends(get_db), _: Admin = Depends(require_admin)
 ):

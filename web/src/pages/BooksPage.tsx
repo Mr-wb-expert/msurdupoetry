@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Search, X } from "lucide-react";
 
 import Seo from "@/components/Seo.tsx";
+import PageHero from "@/components/PageHero.tsx";
 import BookGrid from "@/components/BookGrid.tsx";
 import { EmptyNote, ErrorNote, Loading } from "@/components/Feedback.tsx";
 import { filterBooks, sortBooks, sortLabels, type SortKey } from "@/lib/books";
@@ -56,27 +57,26 @@ export default function BooksPage() {
     <>
       {/* Copy mirrored in api/seo.py. */}
       <Seo
-        title="Urdu Poetry Books & Criticism"
-        description="Every book by Mujahid Sajjad — poetry, criticism and essays. Read online or download the PDF free."
+        title="Urdu Poetry Books PDF | Read Online & Free Download"
+        description="Urdu poetry books, criticism and essays from Prof. Mujahid Sajjad's library, read online or download the PDF free, no sign-up."
       />
 
-      <div className="border-b border-line bg-cream-50">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-16">
-          <div className="text-center sm:text-start">
-            <p className="eyebrow">The library</p>
-            <h1 className="mt-3 text-4xl sm:text-5xl">Books</h1>
-            <p className="mt-4 max-w-2xl text-lg text-muted">
-              {library.data
-                ? `${library.data.length} ${library.data.length === 1 ? "book" : "books"} — ${categoryList} — free to read in the browser and to download as a PDF. No account, no payment.`
-                : "Every book is free to read in the browser and to download as a PDF. No account, no payment."}
-            </p>
-          </div>
-
+      <PageHero
+        eyebrow="The library"
+        title="Urdu Poetry Books"
+        urdu="کتب خانہ"
+        watermark="کتاب"
+        lead={
+          library.data
+            ? `${library.data.length} ${library.data.length === 1 ? "book" : "books"}, ${categoryList}, free to read in the browser and to download as a PDF. No account, no payment.`
+            : "Every book is free to read in the browser and to download as a PDF. No account, no payment."
+        }
+      >
           {/* Search. The only wide field on the page, so it reads as the
               primary action. */}
           <form
             role="search"
-            className="mt-8 max-w-xl"
+            className="mx-auto mt-8 max-w-xl sm:mx-0"
             onSubmit={(event) => {
               event.preventDefault();
               update({ q: draft });
@@ -105,8 +105,7 @@ export default function BooksPage() {
               </button>
             </div>
           </form>
-        </div>
-      </div>
+      </PageHero>
 
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         {/* Filter and sort bar. Mobile stacks the two groups so Sort is not

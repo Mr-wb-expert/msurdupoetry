@@ -55,11 +55,15 @@ export default function PoemPage() {
   const lines = (item.body ?? "").split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
-  const suffix = `by ${headAuthor}. Urdu ${(item.type ?? "Poem").toLowerCase()} online.`;
-  const budget = Math.max(20, 155 - (item.title + " " + suffix).length);
-  const opening = lines.slice(0, 2).join(" ").slice(0, budget);
-  const description =
-    `“${opening}” ${item.title} ${suffix}${item.book ? ` From the book ${item.book}.` : ""}`;
+  const suffix =
+    `by ${headAuthor}. Urdu ${(item.type ?? "Poem").toLowerCase()} online.` +
+    (item.book ? ` From ${item.book}.` : "");
+  const budget = Math.max(20, 155 - `“” ${item.title} ${suffix}`.length);
+  const opening = lines.slice(0, 2).join(" ").slice(0, budget).trimEnd();
+  const description = `“${opening}” ${item.title} ${suffix}`;
+  // Mirrors api/seo.py: createdAt is the day the verse was added here, which
+  // is a publication date only for the site owner's own poems.
+  const ownVerse = !item.author || authorHref === "/poets/mujahid-sajjad";
 
   // Dates mirror the server's static rendering (api/seo.py)
   const dateStamp = `Published ${formatDate(item.createdAt)}`;
@@ -69,11 +73,11 @@ export default function PoemPage() {
       : "";
 
   const shareUrl = `${CANONICAL_ORIGIN}/poems/${item.slug}`;
-  const shareText = `${item.title}\n${lines.slice(0, 4).join("\n")}\n— ${authorName}\n${shareUrl}`;
+  const shareText = `${item.title}\n${lines.slice(0, 4).join("\n")}\n- ${authorName}\n${shareUrl}`;
 
   async function copyPoem() {
     try {
-      await navigator.clipboard.writeText(`${item.title}\n\n${item.body}\n\n— ${authorName}\n${shareUrl}`);
+      await navigator.clipboard.writeText(`${item.title}\n\n${item.body}\n\n- ${authorName}\n${shareUrl}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -105,8 +109,10 @@ export default function PoemPage() {
   return (
     <>
       <Seo
-        title={`${item.title} — ${item.type ?? "Poem"} by ${headAuthor}`}
+        title={`${item.title} | ${item.type ?? "Poem"} by ${headAuthor}`}
         description={description}
+        brand={false}
+        lang="ur"
         jsonLd={[
           {
             "@context": "https://schema.org",
@@ -122,10 +128,11 @@ export default function PoemPage() {
             genre: item.type ?? "Ghazal",
             publisher: {
               "@type": "Person",
+              "@id": `${CANONICAL_ORIGIN}/#person`,
               name: site.fullName,
               url: `${CANONICAL_ORIGIN}/`,
             },
-            datePublished: isoDate(item.createdAt),
+            ...(ownVerse ? { datePublished: isoDate(item.createdAt) } : {}),
             dateModified: isoDate(item.updatedAt ?? item.createdAt),
           },
           {
@@ -158,26 +165,27 @@ export default function PoemPage() {
           <span className="text-ink-800">{item.title}</span>
         </nav>
 
-        <header className="mt-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-          <div>
-            <h1 className="text-3xl sm:text-4xl">{item.title}</h1>
-            <p className="mt-3 text-sm text-muted">
-              {authorHref ? (
-                <Link to={authorHref} className="font-medium text-maroon-700 hover:underline">
-                  {authorName}
-                </Link>
-              ) : (
-                authorName
-              )}
-            </p>
-            {item.book && <p className="mt-1 text-sm text-muted">{item.book}</p>}
-            <p className="mt-1 text-xs text-muted">
-              {dateStamp}
-              {lastUpdated}
-            </p>
-          </div>
+        <header className="mt-8 text-center">
+          <span className="inline-block rounded-full border border-line bg-cream-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-maroon-700">
+            {item.type ?? "Poem"}
+          </span>
+          <h1 className="mt-4 text-3xl sm:text-4xl">{item.title}</h1>
+          <p className="mt-3 text-base">
+            {authorHref ? (
+              <Link to={authorHref} className="font-semibold text-maroon-700 hover:underline">
+                {authorName}
+              </Link>
+            ) : (
+              <span className="font-semibold text-ink-800">{authorName}</span>
+            )}
+            {item.book && <span className="text-muted"> · {item.book}</span>}
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            {dateStamp}
+            {lastUpdated}
+          </p>
 
-          <div className="flex items-center gap-2">
+          <div className="mt-5 flex items-center justify-center gap-2">
             <button
               type="button"
               onClick={copyPoem}
@@ -208,13 +216,19 @@ export default function PoemPage() {
           </div>
         </header>
 
-        <div aria-hidden="true" className="rule-accent mt-6" />
-
-        {/* Couplets rendered with Nastaliq */}
-        <div lang="ur" className="urdu-poetry mt-10 text-ink-900">
-          {item.body.split(/\n{2,}/).map((stanza, index) => (
-            <p key={index}>{stanza}</p>
-          ))}
+        {/* The verse on its own page: framed, centred, ornament above and below. */}
+        <div className="relative mt-10 rounded-sm border border-line bg-cream-50 px-5 py-10 shadow-cover sm:px-12 sm:py-14">
+          <div aria-hidden="true" className="absolute inset-2 rounded-sm border border-marigold-500/30" />
+          <p aria-hidden="true" className="text-center text-xl text-marigold-500">❖</p>
+          <div lang="ur" dir="rtl" className="urdu-poetry relative mt-6 text-center text-ink-900">
+            {/* pre-line keeps the two misre of each sher on their own lines. */}
+            {item.body.split(/\n{2,}/).map((stanza, index) => (
+              <p key={index} className="whitespace-pre-line">
+                {stanza}
+              </p>
+            ))}
+          </div>
+          <p aria-hidden="true" className="mt-6 text-center text-xl text-marigold-500">❖</p>
         </div>
 
         {/* Quick action bar */}
@@ -241,6 +255,47 @@ export default function PoemPage() {
             </button>
           </div>
         </div>
+
+        {/* Roman Urdu, word meanings, explanation — mirrors _poem_extras_html in api/seo.py */}
+        {item.roman && (
+          <section lang="ur-Latn" className="mt-12">
+            <h2 className="text-lg font-serif font-semibold text-ink-900">Roman Urdu</h2>
+            <div className="mt-4 space-y-4 text-ink-800 leading-relaxed">
+              {item.roman.split(/\n{2,}/).map((stanza, index) => (
+                <p key={index} className="whitespace-pre-line">
+                  {stanza}
+                </p>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {parseMeanings(item.meanings).length > 0 && (
+          <section className="mt-12">
+            <h2 className="text-lg font-serif font-semibold text-ink-900">Word meanings</h2>
+            <dl className="mt-4 divide-y divide-line rounded-lg border border-line bg-paper">
+              {parseMeanings(item.meanings).map(([word, meaning], index) => (
+                <div key={index} className="flex items-baseline justify-between gap-4 px-4 py-2.5">
+                  <dt lang="ur" dir="rtl" className="urdu-display text-ink-900">
+                    {word}
+                  </dt>
+                  <dd className="text-right text-sm text-muted">{meaning}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        )}
+
+        {item.notes && (
+          <section className="mt-12">
+            <h2 className="text-lg font-serif font-semibold text-ink-900">About this poem</h2>
+            <div className="mt-4 space-y-3 leading-relaxed text-ink-800">
+              {item.notes.trim().split(/\n{2,}/).map((paragraph, index) => (
+                <p key={index}>{paragraph}</p>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Poet Bio Card */}
         {poet.data && (
@@ -279,22 +334,41 @@ export default function PoemPage() {
             </h2>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {relatedPoems.map((related) => {
-                const previewLine = (related.body ?? "").split("\n").map(l => l.trim()).filter(Boolean)[0] ?? "";
+                // The title is usually the first line, so preview the line
+                // after it rather than printing the same words twice.
+                const lines = (related.body ?? "")
+                  .split("\n")
+                  .map((line) => line.trim())
+                  .filter(Boolean);
+                const previewLine =
+                  (lines[0] === related.title.trim() ? lines[1] : lines[0]) ?? "";
                 return (
                   <Link
                     key={related.slug}
                     to={`/poems/${related.slug}`}
-                    className="block rounded-lg border border-line bg-paper p-4 transition-colors hover:border-maroon-700 hover:shadow-sm"
+                    className="lift flex flex-col rounded-sm border border-line bg-paper p-5 shadow-cover transition-colors hover:border-maroon-700"
                   >
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                    <span className="self-start rounded-full border border-line bg-cream-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-maroon-700">
                       {related.type ?? "Poem"}
                     </span>
-                    <h3 className="mt-1 text-sm font-semibold text-ink-900 line-clamp-1">
+                    {/* Nastaliq needs a tall line box: at the sans line height
+                        its rising and falling strokes were clipped. */}
+                    <h3
+                      lang="ur"
+                      dir="rtl"
+                      className="urdu-display mt-3 truncate py-1 text-xl leading-[2.2] text-ink-900"
+                    >
                       {related.title}
                     </h3>
-                    <p lang="ur" dir="rtl" className="urdu-poetry mt-2 text-sm text-ink-800 line-clamp-2">
-                      {previewLine}
-                    </p>
+                    {previewLine && (
+                      <p
+                        lang="ur"
+                        dir="rtl"
+                        className="urdu-display truncate py-1 text-base leading-[2.2] text-muted"
+                      >
+                        {previewLine}
+                      </p>
+                    )}
                   </Link>
                 );
               })}
@@ -304,6 +378,21 @@ export default function PoemPage() {
       </article>
     </>
   );
+}
+
+/** "word — meaning" per line -> pairs. Mirrors parse_meanings in api/seo.py. */
+function parseMeanings(text: string | null | undefined): [string, string][] {
+  return (text ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const separator = line.includes(" — ") ? " — " : " - ";
+      const at = line.indexOf(separator);
+      return at === -1
+        ? [line, ""]
+        : [line.slice(0, at).trim(), line.slice(at + separator.length).trim()];
+    });
 }
 
 function PoemNotFound() {

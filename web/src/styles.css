@@ -246,6 +246,17 @@
   }
 }
 
+/* iOS Safari zooms the whole page into any field set below 16px and leaves
+   it zoomed. On phones every input is 16px; !important because text-sm
+   utilities on individual fields would otherwise win. */
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -256,4 +267,12 @@
   .lift:hover {
     transform: none;
   }
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

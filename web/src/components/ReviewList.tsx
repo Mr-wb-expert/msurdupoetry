@@ -43,7 +43,7 @@ export default function ReviewList({
   if (reviews.length === 0) {
     return (
       <EmptyNote title="No reviews for this book yet">
-        Use the form on this page — your review appears right away.
+        Use the form on this page: your review appears right away.
       </EmptyNote>
     );
   }

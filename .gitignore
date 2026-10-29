@@ -34,3 +34,6 @@ output/
 # Scratch proofreading file, not site source
 POEMS-PROOFREAD.txt
 
+
+# Batch id of the last api.enrich_poems submit
+.enrich-state.json

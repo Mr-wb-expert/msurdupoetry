@@ -125,11 +125,25 @@ class PoemBase(WireModel):
         return v.strip() if v else v
 
 
-class PoemCreate(PoemBase):
+class PoemExtras(WireModel):
+    """Roman Urdu, word meanings and explanation. Only the single-verse
+    endpoints carry them: the full listing would otherwise triple in size."""
+
+    roman: str | None = Field(default=None, max_length=20000)
+    meanings: str | None = Field(default=None, max_length=10000)
+    notes: str | None = Field(default=None, max_length=10000)
+
+    @field_validator("roman", "meanings", "notes")
+    @classmethod
+    def _strip_extras(cls, v: str | None) -> str | None:
+        return (v.strip() or None) if v else None
+
+
+class PoemCreate(PoemBase, PoemExtras):
     slug: str | None = Field(default=None, max_length=160)
 
 
-class PoemUpdate(PoemBase):
+class PoemUpdate(PoemBase, PoemExtras):
     slug: str | None = Field(default=None, max_length=160)
 
 
@@ -140,6 +154,10 @@ class PoemOut(PoemBase):
     created_at: datetime
     # Last admin edit — feeds the poem page's visible dates and dateModified.
     updated_at: datetime | None = None
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
+
+
+class PoemDetail(PoemOut, PoemExtras):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
 
 

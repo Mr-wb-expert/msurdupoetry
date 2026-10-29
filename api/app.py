@@ -46,7 +46,7 @@ def _load_env_file() -> None:
 _load_env_file()
 
 # Vercel loads this file directly rather than as part of the `api` package, so
-# the project root — the directory the package lives in — is put on the path
+# the project root, the directory the package lives in, is put on the path
 # before anything inside the package is imported. Locally it is already there
 # and this is a no-op.
 _ROOT = str(Path(__file__).resolve().parent.parent)
@@ -69,7 +69,7 @@ from api import seo  # noqa: E402
 from api.seed import _add_missing_columns  # noqa: E402
 
 # `create_all` only ever creates, so `_add_missing_columns` is what keeps an
-# existing database in step with the models — a column added later is silently
+# existing database in step with the models, a column added later is silently
 # absent from it, and every insert then 500s. Runs here, not only in
 # `python -m api.seed`, so a deploy or a --reload restart migrates the database
 # it is about to serve.
@@ -95,7 +95,7 @@ app.include_router(admin, prefix="/api")
 
 # No HTTP-level caching on API reads. An admin edit must be visible on the
 # public pages the moment it is saved, and Vercel's edge cache is keyed on the
-# URL — it cannot be purged from this function, so the old s-maxage showed a
+# URL, it cannot be purged from this function, so the old s-maxage showed a
 # stale book list for minutes after every edit (the admin list dodged it with
 # a ?t= cache-buster; the home page had no such luck).
 # The database is still protected, just by the layer admin writes can actually
@@ -110,6 +110,16 @@ async def cache_public_reads(request, call_next):
 
     if request.method == "GET" and request.url.path.startswith("/api/"):
         response.headers["Cache-Control"] = "no-store"
+
+    # Baseline security headers on every response (HSTS comes from Vercel).
+    # No CSP yet: YouTube embeds, Drive PDFs and the font CDN would each need
+    # an allowance, and a wrong policy breaks the reader silently.
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault(
+        "Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()"
+    )
 
     # Diagnostic header to observe processing latency in network tab
     response.headers["X-Response-Time"] = f"{duration_ms:.1f}ms"
@@ -163,7 +173,12 @@ def serve_media(name: str, db: Session = Depends(get_db)) -> Response:
     )
 
 # Pages that always exist. The catalogue entries are added below.
-STATIC_PAGES = ["", "books", "poems", "poets", "videos", "about"]
+STATIC_PAGES = ["", "books", "poems", "poets", "videos", "about", "contact", "privacy", "terms"]
+
+# robots.txt, llms.txt and the sitemap are the same for every visitor, so the
+# edge may keep them. The pages themselves may not: their body depends on the
+# user agent (seo.wants_static_body), and the edge cache is keyed on URL only.
+EDGE_CACHE = "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800"
 
 # Cached set of known slugs and sitemap XML to avoid touching Neon on every SPA or bot hit
 _sitemap_cache: str | None = None
@@ -205,7 +220,11 @@ def sitemap(db: Session = Depends(get_db)) -> Response:
     global _sitemap_cache, _sitemap_cache_time
     now = time.time()
     if _sitemap_cache is not None and (now - _sitemap_cache_time) < _sitemap_ttl:
-        return Response(content=_sitemap_cache, media_type="application/xml")
+        return Response(
+            content=_sitemap_cache,
+            media_type="application/xml",
+            headers={"Cache-Control": EDGE_CACHE},
+        )
 
     origin = SITE_URL or "http://localhost:8000"
     urls = list(STATIC_PAGES)
@@ -218,7 +237,7 @@ def sitemap(db: Session = Depends(get_db)) -> Response:
     # date signal every engine reads and none of them believe; a book's own
     # created/edited pair is when that page actually changed. Pages that only
     # list content (the static routes, the poet hubs) take the newest stamp of
-    # the content they show — that is when they last changed too.
+    # the content they show, that is when they last changed too.
     def _day(value) -> date | None:
         return value.date() if value else None
 
@@ -286,7 +305,7 @@ def sitemap(db: Session = Depends(get_db)) -> Response:
     return Response(
         content=xml_content,
         media_type="application/xml",
-        headers={"Cache-Control": "public, max-age=3600, s-maxage=86400"},
+        headers={"Cache-Control": EDGE_CACHE},
     )
 
 
@@ -306,41 +325,73 @@ def robots() -> Response:
             f"Sitemap: {origin}/sitemap.xml\n"
         ),
         media_type="text/plain",
-        headers={"Cache-Control": "public, max-age=86400"},
+        headers={"Cache-Control": EDGE_CACHE},
     )
 
 
 @app.get("/llms.txt", include_in_schema=False)
-def llms_txt() -> Response:
+def llms_txt(db: Session = Depends(get_db)) -> Response:
     """A plain-text orientation for the smaller AI fetchers.
 
     Google's guidance is that Googlebot never reads llms.txt, so this is not
-    a Google lever — it exists for the engines that may, and a file this cheap
-    to serve earns its keep at one request a day. Every URL in it is one the
-    site actually serves.
+    a Google lever — it exists for the engines that may. It names the author
+    plainly and lists every book and poet hub, so an assistant asked about
+    Mujahid Sajjad or one of his books has the exact page to cite. Every URL
+    in it is one the site actually serves.
     """
     origin = SITE_URL or "http://localhost:8000"
+    books = db.query(Book.slug, Book.title, Book.author, Book.published_year).order_by(
+        Book.sort_order.asc(), Book.title.asc()
+    ).all()
+    counts = dict(db.query(Poem.author, func.count(Poem.id)).group_by(Poem.author).all())
+    book_lines = "".join(
+        f"- [{b.title}]({origin}/books/{b.slug}): "
+        f"{b.author or 'Mujahid Sajjad'}{f', {b.published_year}' if b.published_year else ''}"
+        ", free to read online and download as PDF\n"
+        for b in books
+    )
+    poet_lines = "".join(
+        f"- [{poet['name']} ({poet['urdu']})]({origin}/poets/{poet['slug']}): "
+        f"{sum(counts.get(a, 0) for a in poet['aliases'])} verses\n"
+        for poet in POETS
+    )
     return Response(
         content=(
-            "# Mujahid Sajjad — msurdupoetry.com\n"
+            "# Mujahid Sajjad | msurdupoetry.com\n"
             "\n"
-            "> The digital library of Prof. Syed Mujahid Sajjad, Urdu poet and "
-            "Associate Professor of English at Govt. Graduate College Burewala. "
-            "Every book and verse is free to read online, no account needed.\n"
+            "> A free online library of Urdu poetry: 2,000+ ghazals, nazms and shayari "
+            "in Urdu text by 25+ poets, Allama Iqbal, Mirza Ghalib, Mir Taqi Mir, Faiz "
+            "Ahmed Faiz, Ahmed Faraz, Jaun Elia, Parveen Shakir, Nasir Kazmi, Mohsin "
+            "Naqvi and more, each poem credited to its poet, each poet with a biography "
+            "page. Curated by Prof. Syed Mujahid Sajjad (سید مجاہد سجاد), Urdu poet and "
+            "Associate Professor of English at Govt. Graduate College Burewala, Punjab, "
+            "Pakistan, whose own books are free to read and download here.\n"
+            "\n"
+            "Key facts: every verse is typed Urdu text (copyable, not images); every "
+            "book is a free PDF; Mujahid Sajjad's books include Magar Manzar Nahi Mera; "
+            "Ghazala Anjum wrote a critical study of his poetry.\n"
             "\n"
             "## Primary pages\n"
             f"- [{origin}/about]({origin}/about): biography, FAQs, bibliography\n"
-            f"- [{origin}/books]({origin}/books): every book — read online or download PDF\n"
+            f"- [{origin}/poets/mujahid-sajjad]({origin}/poets/mujahid-sajjad): Mujahid Sajjad's own poet page\n"
+            f"- [{origin}/books]({origin}/books): every book, read online or download PDF\n"
             f"- [{origin}/poems]({origin}/poems): ghazals and nazms in Urdu\n"
             f"- [{origin}/poets]({origin}/poets): poet hubs with their verses\n"
             f"- [{origin}/videos]({origin}/videos): recitations on YouTube\n"
+            f"- [{origin}/contact]({origin}/contact): email {seo.CONTACT_EMAIL}, WhatsApp\n"
+            "\n"
+            "## Books\n"
+            f"{book_lines}"
+            "\n"
+            "## Poets\n"
+            f"{poet_lines}"
             "\n"
             "## Optional\n"
             f"- [{origin}/sitemap.xml]({origin}/sitemap.xml): every indexed URL\n"
             f"- [{origin}/robots.txt]({origin}/robots.txt): crawl rules\n"
         ),
         media_type="text/plain; charset=utf-8",
-        headers={"Cache-Control": "public, max-age=86400"},
+        headers={"Cache-Control": EDGE_CACHE},
     )
 
 
@@ -352,7 +403,9 @@ if DIST.is_dir():
     # re-reading the file per request would be pure overhead.
     _SHELL = (DIST / "index.html").read_text(encoding="utf-8")
 
-    @app.get("/{spa_path:path}", include_in_schema=False)
+    # HEAD too: link checkers, uptime monitors and some crawlers probe with
+    # it, and a 405 reads to them as a broken page.
+    @app.api_route("/{spa_path:path}", methods=["GET", "HEAD"], include_in_schema=False)
     def spa(spa_path: str, request: Request, db: Session = Depends(get_db)):
         """Client-side routes have no file behind them, so anything that is not
         a real file in dist gets the app shell and the router takes over.

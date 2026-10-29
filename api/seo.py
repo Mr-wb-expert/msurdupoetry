@@ -30,7 +30,7 @@ from api.poets import POETS, by_slug, roman_name
 
 SITE_NAME = "Mujahid Sajjad"
 FULL_NAME = "Prof. Syed Mujahid Sajjad"
-# Mirrors web/src/lib/site.ts — the same facts the client renders from its own
+# Mirrors web/src/lib/site.ts, the same facts the client renders from its own
 # copy, so the static body and the hydrated page say identical words.
 SITE_TITLE = "Urdu Poet, Writer & Associate Professor of English"
 SITE_AFFILIATION = "Govt. Graduate College Burewala, Government of the Punjab"
@@ -42,30 +42,33 @@ SITE_DESCRIPTION = (
 
 # path -> (title, description). Keep in step with web/src/pages/*.tsx.
 PAGE_COPY = {
+    # The site is a library of many poets, curated by Mujahid Sajjad, not his
+    # work alone. Titles lead with the queries people type (KEYWORD-PLAN.md:
+    # "<poet> poetry in urdu", "urdu poetry books pdf", "... in urdu text").
     "": (
-        "Urdu Poetry & Shayari, Free Books Online",
-        "Read the Urdu poetry of Mujahid Sajjad, Urdu poet and Associate Professor "
-        "at Govt. Graduate College Burewala. Free ghazals, nazms and books online.",
+        "Urdu Poetry & Shayari | Iqbal, Ghalib, Faiz, Jaun Elia | Mujahid Sajjad",
+        "Urdu poetry, shayari, ghazals and nazms of Iqbal, Ghalib, Faiz, Ahmed Faraz, "
+        "Jaun Elia and Parveen Shakir in Urdu text, free to read, copy and share.",
     ),
     "books": (
-        "Urdu Poetry Books & Criticism",
-        "Every book by Mujahid Sajjad — poetry, criticism and essays. Read online "
-        "or download the PDF free.",
+        "Urdu Poetry Books PDF | Read Online & Free Download",
+        "Urdu poetry books, criticism and essays from Prof. Mujahid Sajjad's library "
+        ", read online or download the PDF free, no sign-up.",
     ),
     "poems": (
-        "Urdu Poems & Shayari — Ghazals, Nazms",
-        "Read Urdu shayari by Mujahid Sajjad — ghazal and nazm couplets in Urdu, "
-        "free to read and share.",
+        "Urdu Poetry in Urdu Text | Ghazals, Nazms & Shayari",
+        "2,000+ Urdu ghazals, nazms and shayari by Iqbal, Ghalib, Faiz, Faraz, Jaun "
+        "Elia and Parveen Shakir in Urdu text, copy, share and read free.",
     ),
     "poets": (
-        "Urdu Poets & Authors — Faiz, Jaun Elia, Mohsin Naqvi",
-        "The poets whose verses live on this site — Faiz Ahmed Faiz, Jaun Elia, "
-        "Mohsin Naqvi and Mujahid Sajjad. Read their ghazals and nazms in Urdu, free.",
+        "Famous Urdu Poets | Iqbal, Ghalib, Faiz, Jaun Elia & More",
+        "Biographies and poetry of famous Urdu poets, Allama Iqbal, Mirza Ghalib, "
+        "Mir Taqi Mir, Faiz Ahmed Faiz, Ahmed Faraz, Jaun Elia, Parveen Shakir and more.",
     ),
     "videos": (
-        "Urdu Poetry Videos",
-        "Watch Urdu poetry videos by Mujahid Sajjad — ghazal and shayari readings "
-        "on YouTube.",
+        "Urdu Poetry Videos | Mushaira & Recitations",
+        "Urdu poetry videos, mushaira recordings and ghazal and nazm recitations "
+        "from Prof. Mujahid Sajjad's library, on YouTube.",
     ),
     "about": (
         "Urdu Poet at GGC Burewala",
@@ -73,9 +76,46 @@ PAGE_COPY = {
         "Professor of English at Govt. Graduate College Burewala, Government of "
         "the Punjab.",
     ),
+    "contact": (
+        "Contact Us",
+        "Get in touch with Prof. Mujahid Sajjad's digital library, WhatsApp, "
+        "email and correspondence address.",
+    ),
+    "privacy": (
+        "Privacy Policy",
+        "How Prof. Mujahid Sajjad's digital library handles visitor information, "
+        "cookies and advertising.",
+    ),
+    "terms": (
+        "Terms & Conditions",
+        "Terms and conditions for using Prof. Mujahid Sajjad's free Urdu poetry "
+        "digital library.",
+    ),
 }
 
-# Visible FAQ at the foot of /about — the FAQPage schema must repeat it
+# The pages every static body links to, mirrors navLinks in
+# web/src/lib/site.ts plus the footer's legal column. Without them a crawler
+# that skips JavaScript finds no route to /about or /videos at all.
+NAV_LINKS = [
+    ("/", "Home"),
+    ("/books", "Books"),
+    ("/poems", "Verses"),
+    ("/poets", "Poets"),
+    ("/videos", "Videos"),
+    ("/about", "About"),
+]
+FOOTER_LINKS = [
+    ("/poets/mujahid-sajjad", "Poetry by Mujahid Sajjad"),
+    ("/privacy", "Privacy Policy"),
+    ("/terms", "Terms & Conditions"),
+    ("/contact", "Contact Us"),
+]
+CONTACT_EMAIL = "mujahidsajjad113@gmail.com"
+WHATSAPP = "https://wa.me/923006993551"
+# The site owner's own poet hub, mirrors the "mujahid-sajjad" entry in poets.py.
+OWNER_POET_SLUG = "mujahid-sajjad"
+
+# Visible FAQ at the foot of /about, the FAQPage schema must repeat it
 # exactly. Keep in step with AboutPage.tsx. Answers run 40–60 words: long
 # enough for an engine to lift one whole, short enough to stay one answer,
 # and every claim in them is a fact the library already states somewhere.
@@ -90,14 +130,14 @@ FAQ = [
     ),
     (
         "Where can I read Magar Manzar Nahi Mera online?",
-        "The whole book is free on this site — open it in the browser from its "
+        "The whole book is free on this site, open it in the browser from its "
         "Books page, or download the PDF from the same page. It is a collection "
         "of ghazals and nazms published in 2026, and reading it needs no account, "
         "no sign-up and no payment.",
     ),
     (
         "Are the books free to download?",
-        "Yes. Every book in the library — poetry, criticism and essays — is free "
+        "Yes. Every book in the library, poetry, criticism and essays, is free "
         "to read online and free to download as a PDF. There is no account, no "
         "subscription and no payment at any point; each book page carries its own "
         "download link.",
@@ -105,18 +145,77 @@ FAQ = [
     (
         "Who wrote the criticism of his poetry?",
         "Ghazala Anjum wrote it. Her critical study, An Article on the Poetry of "
-        "Mujahid Sajjad, is kept in the library alongside the collection — a "
+        "Mujahid Sajjad, is kept in the library alongside the collection, a "
         "reading of the poems' images, plainspoken idiom and the balance they hold "
         "between observation and feeling.",
     ),
     (
         "What languages does he write in?",
-        "He writes poetry in Urdu — ghazals, nazms and essays — and teaches English "
+        "He writes poetry in Urdu, ghazals, nazms and essays, and teaches English "
         "as Associate Professor at Govt. Graduate College Burewala, Government of "
         "the Punjab. English is the language of his classroom; Urdu is the language "
         "of his verse, free to read here.",
     ),
 ]
+
+# Home page: what the library is, mirrored word for word in HomePage.tsx
+# (visible copy and FAQPage schema).
+HOME_H1 = "Urdu Poetry & Shayari: Ghazals, Nazms and Books"
+HOME_URDU = "اردو شاعری کی آن لائن لائبریری"
+HOME_LEAD = (
+    "A free library of Urdu poetry: the ghazals, nazms and shayari of Allama "
+    "Iqbal, Mirza Ghalib, Faiz Ahmed Faiz, Jaun Elia, Ahmed Faraz, Parveen Shakir "
+    "and more, in Urdu text you can copy, with the books of Prof. Syed Mujahid "
+    "Sajjad, who curates it."
+)
+HOME_FAQ = [
+    (
+        "Which Urdu poets can I read here?",
+        "The library holds ghazals, nazms and shayari by more than 25 poets, among "
+        "them Allama Iqbal, Mirza Ghalib, Mir Taqi Mir, Faiz Ahmed Faiz, Ahmed Faraz, "
+        "Jaun Elia, Parveen Shakir, Nasir Kazmi and Mohsin Naqvi. Each poet has a page "
+        "with a biography and their verses.",
+    ),
+    (
+        "Is the poetry in Urdu text I can copy?",
+        "Yes. Every ghazal and nazm is typed Urdu text in Nastaliq, not an image, so "
+        "you can copy a couplet or share it on WhatsApp straight from the page, free, "
+        "with no account.",
+    ),
+    (
+        "Who runs this library?",
+        "Prof. Syed Mujahid Sajjad, an Urdu poet and Associate Professor of English at "
+        "Govt. Graduate College Burewala. Alongside the classic poets, the library "
+        "carries his own books, poetry, criticism and essays.",
+    ),
+    (
+        "Can I download Urdu poetry books as PDF?",
+        "Yes. Every book in the library is free to read online and free to download as "
+        "a PDF from its own page, no sign-up and no payment.",
+    ),
+]
+
+VIDEOS_LEAD = (
+    "Urdu poetry you can listen to, mushaira recordings, ghazal and nazm "
+    "recitations, and readings by Prof. Syed Mujahid Sajjad and fellow poets. New "
+    "recordings are added as they appear on the channel."
+)
+
+# Spellings people really search under (KEYWORD-DATA.json: "ahmad faraz",
+# "mirza galib", "meer taqi meer", "john elia"). Shown once, visibly, on the
+# poet's page, never a hidden keyword list. Mirrors ALSO_KNOWN_AS in PoetPage.tsx.
+ALSO_KNOWN_AS = {
+    "ahmed-faraz": "Ahmad Faraz",
+    "faiz-ahmed-faiz": "Faiz Ahmad Faiz",
+    "jaun-elia": "John Elia, Jon Elia",
+    "mirza-ghalib": "Mirza Galib, Mirza Asadullah Khan Ghalib",
+    "mir-taqi-mir": "Meer Taqi Meer",
+    "allama-iqbal": "Muhammad Iqbal, Iqbal",
+    "jigar-moradabadi": "Jigar Muradabadi",
+    "n-m-rashid": "Noon Meem Rashid, N. M. Rashed",
+    "altaf-hussain-hali": "Maulana Hali, Khwaja Altaf Hussain Hali",
+    "parveen-shakir": "Parvin Shakir",
+}
 
 # Book pages name their category; mirrors BOOK_KIND in web/src/lib/types.ts.
 BOOK_KIND = {
@@ -128,7 +227,7 @@ BOOK_KIND = {
     "other": "Book",
 }
 
-# Visible category names — mirrors categoryLabels in web/src/lib/types.ts.
+# Visible category names, mirrors categoryLabels in web/src/lib/types.ts.
 CATEGORY_LABELS = {
     "poetry": "Poetry",
     "ghazal": "Ghazal",
@@ -138,7 +237,7 @@ CATEGORY_LABELS = {
     "other": "Literature",
 }
 
-# The id in the URL shapes YouTube actually hands out — mirrors youtubeId()
+# The id in the URL shapes YouTube actually hands out, mirrors youtubeId()
 # in web/src/lib/videos.ts, so both ends keep and drop the same links.
 _YOUTUBE_RE = re.compile(
     r"(?:youtu\.be/|youtube\.com/(?:watch\?(?:[^#]*&)?v=|shorts/|embed/))([\w-]{11})"
@@ -191,27 +290,44 @@ def book_faq(book: Book) -> list[tuple[str, str]]:
         (
             f"Is {title} free?",
             f"Yes. {title} is free to read in the browser on this page and free to "
-            "download as a PDF — there is no account, no subscription and no "
+            "download as a PDF, there is no account, no subscription and no "
             "payment at any point. The Read online and Download buttons at the "
             "top of the page open it.",
         ),
         (
             f"Who wrote {title}?",
             f"{author} wrote {title}{published}. It sits in this site's free digital "
-            "library of Urdu poetry, criticism and essays — read it online or "
+            "library of Urdu poetry, criticism and essays, read it online or "
             "download the PDF, no account needed.",
         ),
         (
             f"What is {title} about?",
             description
-            or f"{title} by {author} — free to read online on this page and to "
+            or f"{title} by {author}, free to read online on this page and to "
             "download as a PDF.",
         ),
     ]
 
 
-def _full_title(title: str) -> str:
-    return title if title == SITE_NAME else f"{title} — {SITE_NAME}"
+def _full_title(title: str, brand: bool = True) -> str:
+    """Mirrors Seo.tsx: the site suffix is dropped when the title already
+    names the site, and on poem pages, where it would sit after another
+    poet's name and push that name out of the visible snippet."""
+    if not brand or SITE_NAME in title:
+        return title
+    return f"{title} | {SITE_NAME}"
+
+
+def poem_description(title: str, body: str, author: str, kind: str, book: str | None) -> str:
+    """Quote the opening lines, then title, poet and book, inside ~155
+    characters. Mirrors the rule in PoemPage.tsx."""
+    lines = [l.strip() for l in (body or "").split("\n") if l.strip()]
+    suffix = f"by {author}. Urdu {kind.lower()} online."
+    if book:
+        suffix += f" From {book}."
+    budget = max(20, 155 - len(f"“” {title} {suffix}"))
+    opening = " ".join(lines[:2])[:budget].rstrip()
+    return f"“{opening}” {title} {suffix}"
 
 
 def _abs_image(src: str | None, origin: str) -> str | None:
@@ -267,9 +383,21 @@ def head(path: str, db, origin: str) -> dict:
     image = None
     graph: list[dict] = []
     noindex = False
+    brand = True
+    # Language of the page's main content, written to <html lang> by apply().
+    lang = "en"
 
     if path in PAGE_COPY:
         title, description = PAGE_COPY[path]
+        if path in ("contact", "privacy", "terms"):
+            graph = [
+                {
+                    "@context": "https://schema.org",
+                    "@type": "ContactPage" if path == "contact" else "WebPage",
+                    "name": title,
+                    "url": url,
+                }
+            ]
         if path == "":
             graph = [
                 {
@@ -278,7 +406,8 @@ def head(path: str, db, origin: str) -> dict:
                     "name": SITE_NAME,
                     "url": f"{origin}/",
                     "description": description,
-                }
+                },
+                _faq_node(HOME_FAQ),
             ]
         elif path == "about":
             graph = [_faq_node(FAQ)]
@@ -308,9 +437,9 @@ def head(path: str, db, origin: str) -> dict:
         if book is None:
             noindex = True
         else:
-            title = f"{book.title} — {BOOK_KIND.get(book.category, 'Book')}"
+            title = f"{book.title} | {BOOK_KIND.get(book.category, 'Book')}"
             description = (book.description or "").strip()[:300] or (
-                f"Read {book.title} by {FULL_NAME} — free online and as a PDF."
+                f"Read {book.title} by {FULL_NAME}, free online and as a PDF."
             )
             image = book.cover_image
             graph = [
@@ -337,7 +466,7 @@ def head(path: str, db, origin: str) -> dict:
                     "offers": {"@type": "Offer", "price": "0", "priceCurrency": "PKR"},
                 },
                 _breadcrumb("Books", "books", book.title, path, origin),
-                # The same three questions the page answers in visible text —
+                # The same three questions the page answers in visible text,
                 # see book_faq().
                 _faq_node(book_faq(book)),
             ]
@@ -350,18 +479,19 @@ def head(path: str, db, origin: str) -> dict:
             # The roman name: half the stored authors are in Urdu script, and
             # nobody types a search in Urdu script. This is what the head says.
             author = roman_name(poem.author) or SITE_NAME
-            title = f"{poem.title} — {kind} by {author}"
+            title = f"{poem.title} | {kind} by {author}"
+            brand = False
+            lang = "ur"
             # Per-poem description: quote the opening lines instead of a
             # template, so every page's crawler signal actually differs.
-            lines = [l.strip() for l in (poem.body or "").split("\n") if l.strip()]
-            suffix = f"by {author}. Urdu {kind.lower()} online."
-            budget = max(20, 155 - len(f"{poem.title} {suffix}"))
-            opening = " ".join(lines[:2])[:budget]
-            description = f"“{opening}” {poem.title} {suffix}"
-            if poem.book:
-                description += f" From the book {poem.book}."
+            description = poem_description(poem.title, poem.body, author, kind, poem.book)
             poet = _poet_for(poem.author)
             poet_url = f"{origin}/poets/{poet['slug']}" if poet else None
+            # created_at is the day the row was added here. For the owner's
+            # own verse that is its publication; for a classical poem it is an
+            # import date, and claiming Ghalib published in 2026 is a date no
+            # engine should be asked to believe.
+            own = not poem.author or (poet is not None and poet["slug"] == OWNER_POET_SLUG)
             graph = [
                 {
                     "@context": "https://schema.org",
@@ -377,10 +507,11 @@ def head(path: str, db, origin: str) -> dict:
                     "genre": kind,
                     "publisher": {
                         "@type": "Person",
+                        "@id": f"{origin}/#person",
                         "name": FULL_NAME,
                         "url": f"{origin}/",
                     },
-                    "datePublished": _iso_date(poem.created_at),
+                    **({"datePublished": _iso_date(poem.created_at)} if own else {}),
                     "dateModified": _iso_date(poem.updated_at or poem.created_at),
                 },
                 _breadcrumb("Verses", "poems", poem.title, path, origin),
@@ -393,10 +524,21 @@ def head(path: str, db, origin: str) -> dict:
         else:
             # The roman name leads the title: the queries are "jaun elia
             # poetry" and "parveen shakir shayari", never the Urdu script.
-            title = f"{poet['name']} — Ghazal, Shayari & Poetry"
+            # "<poet> poetry in urdu" is the query shape for every poet in
+            # KEYWORD-DATA.json; "biography" is Rekhta's other poet target.
+            title = f"{poet['name']} Poetry in Urdu | Ghazals, Shayari & Biography"
+            brand = False
+            lang = "ur"
+            count = (
+                db.query(func.count(Poem.id)).filter(Poem.author.in_(poet["aliases"])).scalar()
+                or 0
+            )
+            also = ALSO_KNOWN_AS.get(poet["slug"])
             description = (
-                f"Read Urdu ghazals, nazms and shayari by {poet['name']} — "
-                "biography and verses, free online, no sign-up."
+                f"Read {poet['name']} poetry in Urdu text"
+                + (f", {count} ghazals, nazms and shayari" if count else "")
+                + " with a biography. Free to read, copy and share."
+                + (f" Also spelled {also}." if also else "")
             )
             graph = [
                 {
@@ -410,7 +552,7 @@ def head(path: str, db, origin: str) -> dict:
             ]
 
     if title is None:
-        # Unknown route, or /admin — which robots.txt already disallows and
+        # Unknown route, or /admin, which robots.txt already disallows and
         # which deserves the meta signal on top of the txt rule.
         noindex = True
         if path == "admin":
@@ -425,12 +567,13 @@ def head(path: str, db, origin: str) -> dict:
     image = _abs_image(image, origin)
 
     result = {
-        "title": _full_title(title),
+        "title": _full_title(title, brand),
         "description": " ".join(description.split()),
         "url": url,
         "image": image,
         "noindex": noindex,
         "graph": graph,
+        "lang": lang,
     }
     _seo_cache[cache_key] = (now, result)
     return result
@@ -443,6 +586,15 @@ def apply(document: str, meta: dict, body: str = "") -> str:
     title_attr = html.escape(meta["title"], quote=True)
     description = html.escape(meta["description"], quote=True)
 
+    # The page's language, not the UI chrome's: a poem page is Urdu text.
+    # dir stays ltr, the layout is built left-to-right and the Urdu blocks
+    # carry their own dir="rtl".
+    document = re.sub(
+        r'<html lang="[^"]*"',
+        lambda _: f'<html lang="{meta.get("lang", "en")}"',
+        document,
+        count=1,
+    )
     document = re.sub(
         r"<title>[^<]*</title>",
         lambda _: f"<title>{title_text}</title>",
@@ -606,10 +758,45 @@ def body(path: str, db) -> str:
     mirrors web/src/pages/*.tsx and the content comes from the same rows the
     JSON endpoints serve.
 
-    No cache: only crawlers reach this, a full crawl is a few dozen requests,
-    and each one costs the two or three queries its JSON page would have made
-    anyway.
+    Every page is wrapped in the site's header and footer links, so a no-JS
+    crawler can reach every section from any page, as a browser user can.
+
+    Cached like head(): a full crawl is 2,000+ requests, and each one used to
+    cost the same queries again (slow responses lower the crawl rate).
     """
+    now = time.time()
+    cached = _body_cache.get(path)
+    if cached is not None and (now - cached[0]) < _SEO_CACHE_TTL:
+        return cached[1]
+    main = _main_body(path, db)
+    result = (_site_header() + f"<main>{main}</main>" + _site_footer()) if main else ""
+    _body_cache[path] = (now, result)
+    return result
+
+
+_body_cache: dict[str, tuple[float, str]] = {}
+
+
+def _site_header() -> str:
+    return (
+        f'<header><p>{_link("/", FULL_NAME)}</p><nav aria-label="Main"><ul>'
+        + "".join(f"<li>{_link(href, label)}</li>" for href, label in NAV_LINKS)
+        + "</ul></nav></header>"
+    )
+
+
+def _site_footer() -> str:
+    return (
+        '<footer><nav aria-label="Footer"><ul>'
+        + "".join(f"<li>{_link(href, label)}</li>" for href, label in FOOTER_LINKS)
+        + "</ul></nav>"
+        f"<p>{_e(FULL_NAME)} · {_e(SITE_TITLE)} · {_e(SITE_AFFILIATION)}</p>"
+        f'<p>Email: <a href="mailto:{CONTACT_EMAIL}">{CONTACT_EMAIL}</a> · '
+        f'{_link(WHATSAPP, "WhatsApp")}</p></footer>'
+    )
+
+
+def _main_body(path: str, db) -> str:
     if path == "":
         return _home_body(db)
     if path == "books":
@@ -622,9 +809,11 @@ def body(path: str, db) -> str:
         return _videos_body(db)
     if path == "about":
         return _about_body(db)
+    if path in ("contact", "privacy", "terms"):
+        return _legal_body(path)
     if path.startswith("books/"):
         book = db.query(Book).filter(Book.slug == path.removeprefix("books/")).first()
-        return _book_body(book) if book else ""
+        return _book_body(book, db) if book else ""
     if path.startswith("poems/"):
         poem = db.query(Poem).filter(Poem.slug == path.removeprefix("poems/")).first()
         return _poem_body(poem, db) if poem else ""
@@ -646,9 +835,10 @@ def _home_body(db) -> str:
     featured = books[0] if books else None
 
     parts = [
-        '<p class="eyebrow">Books, free to read</p>',
-        "<h1>Urdu Poetry &amp; Shayari by Syed Mujahid Sajjad</h1>",
-        f"<p>{_e(SITE_DESCRIPTION)}</p>",
+        '<p class="eyebrow">Free Urdu poetry library</p>',
+        f"<h1>{_e(HOME_H1)}</h1>",
+        f'<p lang="ur" dir="rtl">{_e(HOME_URDU)}</p>',
+        f"<p>{_e(HOME_LEAD)}</p>",
         (
             "<p>"
             + _link("/books", "Browse the library")
@@ -684,23 +874,37 @@ def _home_body(db) -> str:
 
     if len(books) > 1:
         parts += [
-            "<h2>Books</h2>",
-            "<p>Explore the literary works of Mujahid Sajjad.</p>",
+            "<h2>Urdu Poetry Books</h2>",
+            "<p>Poetry, criticism and essays, free to read online and to download as PDF.</p>",
             "<ul>"
             + "".join(
                 f"<li><p>{_e(_book_label(b))}</p>"
                 f"<h3>{_link(f'/books/{b.slug}', b.title)}</h3>"
                 f"<p>{_e(b.author)}</p></li>"
-                for b in books[:3]
+                for b in books
             )
             + "</ul>",
             f"<p>{_link('/books', 'See all')}</p>",
         ]
 
+    # Every poet hub, anchored with the query people type ("jaun elia poetry").
+    parts += [
+        "<h2>Read Urdu poetry by poet</h2>",
+        "<ul>"
+        + "".join(
+            f"<li>{_link(f'/poets/{poet['slug']}', f'{poet['name']} poetry')} "
+            f'<span lang="ur" dir="rtl">{_e(poet["urdu"])}</span></li>'
+            for poet in POETS
+        )
+        + "</ul>",
+        f"<p>{_link('/poets', 'All poets')} · "
+        f"{_link('/about', 'About Prof. Syed Mujahid Sajjad')}</p>",
+    ]
+
     if verse_total:
         parts += [
-            "<h2>Verses</h2>",
-            "<p>Couplets from the collection, free to read and share.</p>",
+            "<h2>Urdu Ghazals &amp; Nazms</h2>",
+            "<p>A few couplets from the library, in Urdu text, free to read and share.</p>",
             "<ul>"
             + "".join(
                 f"<li><h3>{_link(f'/poems/{p.slug}', p.title)}</h3>"
@@ -717,6 +921,8 @@ def _home_body(db) -> str:
             f"<p>{_link(f'https://www.youtube.com/watch?v={_youtube_id(latest_video.url)}', latest_video.description or 'Watch on YouTube')}</p>",
         ]
 
+    parts += ["<h2>Questions about the library</h2>", _faq_html(HOME_FAQ)]
+
     return "".join(parts)
 
 
@@ -729,7 +935,7 @@ def _books_body(db) -> str:
         else (labels[0] if labels else "")
     )
     lead = (
-        f"{len(books)} {'book' if len(books) == 1 else 'books'} — {category_list} — "
+        f"{len(books)} {'book' if len(books) == 1 else 'books'}, {category_list}, "
         "free to read in the browser and to download as a PDF. No account, no payment."
     )
     items = "".join(
@@ -741,36 +947,53 @@ def _books_body(db) -> str:
         for b in books
     )
     return (
-        '<p class="eyebrow">The library</p><h1>Books</h1>'
+        '<p class="eyebrow">The library</p><h1>Urdu Poetry Books</h1>'
         f"<p>{_e(lead)}</p><ul>{items}</ul>"
     )
 
 
+# How many of the newest verses /poems links directly. Every other verse is
+# one hop further, on its poet's hub: one 445 KB page of 2,000+ links was the
+# slowest URL on the site and spread its link weight to nothing.
+POEMS_LISTED = 60
+
+
 def _poems_body(db) -> str:
-    poems = db.query(
-        Poem.slug, Poem.title, Poem.author, Poem.type
-    ).order_by(Poem.created_at.desc()).all()
-    kinds = [p.type or "Poem" for p in poems]
+    kinds = dict(db.query(Poem.type, func.count(Poem.id)).group_by(Poem.type).all())
+    total = sum(kinds.values())
     counts = (
-        f"{len(poems)} verses · {kinds.count('Ghazal')} ghazals · "
-        f"{kinds.count('Nazm')} nazms"
-        + (f" · {kinds.count('Poem')} poems" if kinds.count("Poem") else "")
+        f"{total} verses · {kinds.get('Ghazal', 0)} ghazals · "
+        f"{kinds.get('Nazm', 0)} nazms"
+        + (f" · {kinds.get('Poem', 0)} poems" if kinds.get("Poem") else "")
     )
+    per_author = dict(db.query(Poem.author, func.count(Poem.id)).group_by(Poem.author).all())
+    poets = "".join(
+        f"<li>{_link(f'/poets/{poet['slug']}', poet['name'])} "
+        f'<span lang="ur" dir="rtl">{_e(poet["urdu"])}</span>, {n} verses</li>'
+        for poet in POETS
+        if (n := sum(per_author.get(alias, 0) for alias in poet["aliases"]))
+    )
+    newest = db.query(
+        Poem.slug, Poem.title, Poem.author, Poem.type
+    ).order_by(Poem.created_at.desc()).limit(POEMS_LISTED).all()
     items = "".join(
         f"<li><p>{_e(p.type or 'Poem')}</p>"
-        f"<h2>{_link(f'/poems/{p.slug}', p.title)}</h2>"
+        f"<h3>{_link(f'/poems/{p.slug}', p.title)}</h3>"
         + (
             f"<p>{_link(f'/poets/{_poet_for(p.author)['slug']}', roman_name(p.author))}</p>"
             if _poet_for(p.author)
             else f"<p>{_e(roman_name(p.author) or '')}</p>"
         )
         + "</li>"
-        for p in poems
+        for p in newest
     )
     return (
-        '<p class="eyebrow">In his own words</p><h1>Verses</h1>'
-        "<p>Ghazal and nazm couplets, set in the Nastaliq they were written in.</p>"
-        f"<p>{_e(counts)}</p><ul>{items}</ul>"
+        '<p class="eyebrow">The collection</p><h1>Urdu Ghazals, Nazms &amp; Shayari</h1>'
+        "<p>The ghazals and nazms of great Urdu poets such as Iqbal, Ghalib, Mir, Faiz, "
+        "Faraz, Jaun Elia and Parveen Shakir, in Urdu text you can copy and share.</p>"
+        f"<p>{_e(counts)}</p>"
+        f"<h2>Browse by poet</h2><ul>{poets}</ul>"
+        f"<h2>Newest verses</h2><ul>{items}</ul>"
     )
 
 
@@ -785,9 +1008,9 @@ def _poets_body(db) -> str:
         for poet in POETS
     )
     return (
-        '<p class="eyebrow">The poets on the site</p><h1>Poets</h1>'
-        "<p>Every poet whose ghazals and nazms are collected here, each with "
-        "their own page and the verses written in their name.</p>"
+        '<p class="eyebrow">The poets on the site</p><h1>Famous Urdu Poets</h1>'
+        "<p>From Mir and Ghalib to Iqbal, Faiz and Jaun Elia, every poet in the "
+        "library, each with a biography in Urdu and their ghazals and nazms in Urdu text.</p>"
         f"<ul>{items}</ul>"
     )
 
@@ -814,6 +1037,13 @@ def _poet_body(db, poet) -> str:
             if count
             else f'<p>{_link("/poems", "Browse all verses")}</p>'
         )
+        + (
+            # The owner's hub links his books and biography: until his own
+            # verses are added, those are what a reader searching his name wants.
+            f'<p>{_link("/books", "Read his books free")} · {_link("/about", "Biography and FAQ")}</p>'
+            if poet["slug"] == OWNER_POET_SLUG
+            else ""
+        )
     )
 
 
@@ -825,10 +1055,8 @@ def _videos_body(db) -> str:
         if (vid := _youtube_id(video.url))
     )
     return (
-        '<p class="eyebrow">Watch</p><h1>Videos</h1>'
-        "<p>Readings, mushaira recordings and interviews with the poetry of Syed "
-        "Mujahid Sajjad — ghazals and nazms recited in his own voice and by fellow "
-        "poets. New recordings are added here as they appear on the channel.</p>"
+        '<p class="eyebrow">Watch</p><h1>Urdu Poetry Videos</h1>'
+        f"<p>{_e(VIDEOS_LEAD)}</p>"
         + (f"<ul>{items}</ul>" if items else "<p>Videos coming soon.</p>")
     )
 
@@ -845,14 +1073,14 @@ def _about_body(db) -> str:
     para_two = (
         "The collection Magar Manzar Nahi Mera gathers those ghazals and nazms "
         "between two covers, and Ghazala Anjum's critical study of the work "
-        "accompanies it in the library. Both are free here in full — read online, "
-        "or download the PDF — alongside essays and contributed writing from "
+        "accompanies it in the library. Both are free here in full, read online, "
+        "or download the PDF, alongside essays and contributed writing from "
         "across his years of teaching."
     )
     works = [
         (
             "Poetry",
-            "Ghazals and nazms in Urdu — free to read on this site and in the PDF "
+            "Ghazals and nazms in Urdu, free to read on this site and in the PDF "
             "of Magar Manzar Nahi Mera.",
         ),
         ("Criticism", "A critical study by Ghazala Anjum accompanies the collection in the library."),
@@ -891,7 +1119,180 @@ def _about_body(db) -> str:
     )
 
 
-def _book_body(book: Book) -> str:
+def _book_links(book: Book, db) -> str:
+    """Where a reader goes next: the author's hub, verses from this book and
+    the rest of the library. Book pages used to link only back to /books."""
+    parts = []
+    poet = _poet_for(book.author) or by_slug(OWNER_POET_SLUG)
+    if poet:
+        parts.append(
+            f"<p>{_link(f'/poets/{poet['slug']}', f'More by {poet['name']}')}</p>"
+        )
+    verses = (
+        db.query(Poem.slug, Poem.title)
+        .filter(Poem.book == book.title)
+        .order_by(Poem.created_at.desc())
+        .limit(10)
+        .all()
+    )
+    if verses:
+        parts.append(
+            "<h2>Verses from this book</h2><ul>"
+            + "".join(f"<li>{_link(f'/poems/{p.slug}', p.title)}</li>" for p in verses)
+            + "</ul>"
+        )
+    others = (
+        db.query(Book.slug, Book.title)
+        .filter(Book.slug != book.slug)
+        .order_by(Book.sort_order.asc(), Book.title.asc())
+        .all()
+    )
+    if others:
+        parts.append(
+            "<h2>More books in the library</h2><ul>"
+            + "".join(f"<li>{_link(f'/books/{b.slug}', b.title)}</li>" for b in others)
+            + "</ul>"
+        )
+    return "".join(parts)
+
+
+def _legal_body(path: str) -> str:
+    """Mirrors ContactUsPage, PrivacyPolicyPage and TermsConditionsPage."""
+    if path == "contact":
+        return (
+            '<p class="eyebrow">Get in touch</p><h1>Contact Us</h1>'
+            '<p lang="ur" dir="rtl">رابطہ کریں</p>'
+            f"<p>Questions about the books, the verses or {_e(FULL_NAME)}'s work are "
+            "welcome. Write in Urdu or English.</p>"
+            "<h2>WhatsApp</h2><p>The simplest way to ask for a book PDF.</p>"
+            f'<p>{_link(WHATSAPP, "0300 6993551")}</p>'
+            "<h2>Email</h2><p>For longer letters, corrections and invitations.</p>"
+            f'<p><a href="mailto:{CONTACT_EMAIL}">{CONTACT_EMAIL}</a></p>'
+            "<h2>Correspondence address</h2>"
+            "<address>Department of English, Govt. Graduate College Burewala, "
+            "Government of the Punjab</address>"
+            "<h2>What to write to us about</h2><ul>"
+            "<li><h3>A book or its PDF</h3><p>Can't open a book, or looking for one "
+            "that isn't in the library yet.</p></li>"
+            "<li><h3>A correction to a verse</h3><p>A misprinted word, a wrong poet or "
+            "a missing couplet, send the page link.</p></li>"
+            "<li><h3>Mushaira, recitation or interview</h3><p>Invitations, recordings "
+            "and requests to feature the poetry.</p></li></ul>"
+            "<h2>Everything in the library is free</h2><p>Every book can be read online "
+            "or downloaded as a PDF, no account, no payment.</p>"
+            f'<p>{_link("/books", "Browse books")} · '
+            f'{_link(f"/poets/{OWNER_POET_SLUG}", "Read his poetry")}</p>'
+        )
+    if path in LEGAL_PAGES:
+        page = LEGAL_PAGES[path]
+        return (
+            f'<p class="eyebrow">{_e(page["eyebrow"])}</p><h1>{_e(page["title"])}</h1>'
+            f'<p lang="ur" dir="rtl">{_e(page["urdu"])}</p>'
+            f'<p>{_e(page["lead"])}</p><p>Last updated: October 2026</p>'
+            "<ul>"
+            + "".join(f"<li><strong>{_e(t)}.</strong> {_e(x)}</li>" for t, x in page["glance"])
+            + "</ul>"
+            + "".join(
+                f"<h2>{_e(heading)}</h2>" + "".join(f"<p>{_e(p)}</p>" for p in paragraphs)
+                for heading, paragraphs in page["sections"]
+            )
+            + "<h2>Questions about this page?</h2>"
+            f'<p>Write to us in Urdu or English: <a href="mailto:{CONTACT_EMAIL}">{CONTACT_EMAIL}</a> · '
+            f'{_link(WHATSAPP, "WhatsApp")} · {_link("/contact", "All contact details")}</p>'
+        )
+    return ""
+
+
+# Privacy and Terms copy, mirrors PrivacyPolicyPage.tsx and
+# TermsConditionsPage.tsx (LegalPage layout): same headings, same words.
+LEGAL_PAGES = {
+    "privacy": {
+        "eyebrow": "Privacy",
+        "title": "Privacy Policy",
+        "urdu": "رازداری کی پالیسی",
+        "lead": "This site is a free digital library of Urdu poetry, books and verses, "
+        "operated by Prof. Syed Mujahid Sajjad. This page explains what information is "
+        "involved when you visit.",
+        "glance": [
+            ("No account needed", "Reading or downloading any book needs no sign-up, so the "
+             "site collects no name or email."),
+            ("We don't sell data", "Your personal information is never sold to anyone."),
+            ("Standard cookies", "Cookies keep the site working, measure visits and support "
+             "ads. You can turn them off."),
+        ],
+        "sections": [
+            ("Who we are", [
+                "This site is operated by Prof. Syed Mujahid Sajjad (“we”, “us”, “our”). It is "
+                "a free digital library of Urdu poetry, books and verses. We do not sell your "
+                "personal information.",
+            ]),
+            ("Information we collect", [
+                "We do not require an account, sign-up or login to read or download any book, "
+                "so we do not collect your name, email or contact details through the site itself.",
+            ]),
+            ("Cookies, analytics and advertising", [
+                "Like most websites, we use standard technologies to keep the site working and "
+                "to understand how visitors use it:",
+                "Cookies: small files stored by your browser to remember preferences and keep "
+                "features working.",
+                "Analytics: anonymised, aggregate data about page visits so we can improve the library.",
+                "Advertising: third-party ad networks (such as Google AdSense) may serve ads and "
+                "use cookies to show relevant advertising and measure ad performance.",
+            ]),
+            ("Your choices", [
+                "You can control or disable cookies through your browser settings. Disabling "
+                "cookies may prevent some parts of the site from working correctly.",
+            ]),
+            ("When you contact us", [
+                "If you contact us by WhatsApp, email or any other channel, the details you "
+                "provide are used only to respond to you and are not shared with third parties.",
+            ]),
+        ],
+    },
+    "terms": {
+        "eyebrow": "Terms",
+        "title": "Terms & Conditions",
+        "urdu": "شرائط و ضوابط",
+        "lead": "Welcome to the digital library and archive of Prof. Syed Mujahid Sajjad. By "
+        "using this site you agree to these terms and conditions.",
+        "glance": [
+            ("Free to read", "Every book, poem and verse is free, read online or download, "
+             "no account, no payment."),
+            ("Personal use", "Read and download for yourself and for study, not for commercial use."),
+            ("Ask before republishing", "Republishing, redistributing or selling the content "
+             "needs permission."),
+        ],
+        "sections": [
+            ("Free access", [
+                "Every book, poem and verse on this site is provided free of charge. You may "
+                "read online or download PDF editions without creating an account or making "
+                "any payment.",
+            ]),
+            ("Copyright", [
+                "All books, poems, criticism and other content on this site are the property of "
+                "Prof. Syed Mujahid Sajjad or their respective rights holders, and are protected "
+                "by copyright.",
+                "You may read and download content for personal, non-commercial use. You may not "
+                "republish, redistribute or sell any content from this site without permission.",
+            ]),
+            ("No warranty", [
+                "The site and its content are provided “as is”, without warranty of any kind. We "
+                "do not guarantee that the site will always be available or free of errors.",
+            ]),
+            ("Links to other sites", [
+                "The site may contain links to external websites. We are not responsible for the "
+                "content or privacy practices of those sites.",
+            ]),
+            ("Changes to these terms", [
+                "We may update these terms from time to time. Your continued use of the site "
+                "after changes are posted means you accept the updated terms.",
+            ]),
+        ],
+    },
+}
+
+
+def _book_body(book: Book, db) -> str:
     return (
         f'<nav>{_link("/books", "Books")} / {_e(book.title)}</nav>'
         f"<p>{_e(CATEGORY_LABELS.get(book.category, 'Book'))}</p>"
@@ -900,13 +1301,57 @@ def _book_body(book: Book) -> str:
         + (f"<p>{_e((book.description or '').strip())}</p>" if (book.description or "").strip() else "")
         + _facts_html(_book_facts(book))
         + (
-            f"<p>{_link(book.pdf_url, 'Download the PDF')} — free.</p>"
+            f"<p>{_link(book.pdf_url, 'Download the PDF')}, free.</p>"
             if book.pdf_url
             else ""
         )
         + '<p class="eyebrow">FAQ</p><h2>Common questions</h2>'
         + _faq_html(book_faq(book))
+        + _book_links(book, db)
     )
+
+
+def parse_meanings(text: str | None) -> list[tuple[str, str]]:
+    """'word — meaning' per line -> pairs. Mirrors parseMeanings() in
+    PoemPage.tsx; a line without a separator is kept as a bare word."""
+    pairs = []
+    for line in (text or "").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        word, _, meaning = line.partition(" — ") if " — " in line else line.partition(" - ")
+        pairs.append((word.strip(), meaning.strip()))
+    return pairs
+
+
+def _poem_extras_html(poem: Poem) -> str:
+    """Roman Urdu, word meanings and explanation — same order and headings as
+    PoemPage.tsx. Each block appears only when the field is filled."""
+    parts = []
+    if poem.roman:
+        stanzas = re.split(r"\n{2,}", poem.roman.replace("\r\n", "\n"))
+        parts.append(
+            '<section lang="ur-Latn"><h2>Roman Urdu</h2>'
+            + "".join(f'<p style="white-space:pre-line">{_e(s)}</p>' for s in stanzas)
+            + "</section>"
+        )
+    pairs = parse_meanings(poem.meanings)
+    if pairs:
+        parts.append(
+            "<section><h2>Word meanings</h2><dl>"
+            + "".join(
+                f'<div><dt lang="ur" dir="rtl">{_e(w)}</dt><dd>{_e(m)}</dd></div>'
+                for w, m in pairs
+            )
+            + "</dl></section>"
+        )
+    if poem.notes:
+        parts.append(
+            "<section><h2>About this poem</h2>"
+            + "".join(f"<p>{_e(p)}</p>" for p in re.split(r"\n{2,}", poem.notes.strip()))
+            + "</section>"
+        )
+    return "".join(parts)
 
 
 def _poem_body(poem: Poem, db=None) -> str:
@@ -967,9 +1412,10 @@ def _poem_body(poem: Poem, db=None) -> str:
         + poet_link_html
         + (f"<p>{_e(poem.book)}</p>" if poem.book else "")
         + f"<p>{_e(stamps)}</p>"
-        + '<div lang="ur">'
+        + '<div lang="ur" dir="rtl">'
         + "".join(f'<p style="white-space:pre-line">{_e(s)}</p>' for s in stanzas)
         + "</div>"
+        + _poem_extras_html(poem)
         + bio_html
         + related_html
     )

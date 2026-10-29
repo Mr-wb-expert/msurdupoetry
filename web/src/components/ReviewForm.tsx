@@ -78,7 +78,7 @@ export default function ReviewForm({
             className="field"
           />
           <p id="review-body-hint" className="field-hint">
-            {tooShort ? "A little longer, please — at least 20 characters." : "At least 20 characters."}
+            {tooShort ? "A little longer, please, at least 20 characters." : "At least 20 characters."}
           </p>
         </div>
 

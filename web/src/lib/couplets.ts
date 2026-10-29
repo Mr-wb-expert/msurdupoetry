@@ -17,6 +17,8 @@ export interface Couplet {
   type?: VerseType;
   /** The page holding the whole poem. */
   href: string;
+  /** The poet as saved on the poem; null for a verse saved before the field. */
+  author: string | null;
 }
 
 /** An admin-added verse joins the list as a card. */
@@ -26,4 +28,5 @@ export const fromPoem = (poem: Poem): Couplet => ({
   couplet: poem.body,
   href: `/poems/${poem.slug}`,
   type: poem.type ?? undefined,
+  author: poem.author,
 });

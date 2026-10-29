@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { BookOpen, Download } from "lucide-react";
+import { BookOpen, Check, Download } from "lucide-react";
 
 import Seo from "@/components/Seo.tsx";
+import FaqSection from "@/components/FaqSection.tsx";
 import SectionHeading from "@/components/SectionHeading.tsx";
 import BookCard from "@/components/BookCard.tsx";
 import BookCover from "@/components/BookCover.tsx";
@@ -14,6 +15,7 @@ import NotFoundPage from "./NotFoundPage.tsx";
 import { downloadUrl, embedUrl, externalReadUrl, relatedBooks } from "@/lib/books";
 import { formatDate, isoDate } from "@/lib/dates";
 import { site } from "@/lib/site";
+import { poetHref } from "@/lib/poets";
 import { useApi } from "@/lib/useApi.ts";
 import { getBook, getBooks, getReviewsForBook } from "@/lib/api.ts";
 import { BOOK_KIND, categoryLabels } from "@/lib/types";
@@ -56,17 +58,17 @@ export default function BookPage() {
   const faq = [
     {
       q: `Is ${item.title} free?`,
-      a: `Yes. ${item.title} is free to read in the browser on this page and free to download as a PDF — there is no account, no subscription and no payment at any point. The Read online and Download buttons at the top of the page open it.`,
+      a: `Yes. ${item.title} is free to read in the browser on this page and free to download as a PDF, there is no account, no subscription and no payment at any point. The Read online and Download buttons at the top of the page open it.`,
     },
     {
       q: `Who wrote ${item.title}?`,
-      a: `${item.author || site.fullName} wrote ${item.title}${item.publishedYear ? `, published in ${item.publishedYear}` : ""}. It sits in this site's free digital library of Urdu poetry, criticism and essays — read it online or download the PDF, no account needed.`,
+      a: `${item.author || site.fullName} wrote ${item.title}${item.publishedYear ? `, published in ${item.publishedYear}` : ""}. It sits in this site's free digital library of Urdu poetry, criticism and essays, read it online or download the PDF, no account needed.`,
     },
     {
       q: `What is ${item.title} about?`,
       a:
         item.description.trim() ||
-        `${item.title} by ${item.author || site.fullName} — free to read online on this page and to download as a PDF.`,
+        `${item.title} by ${item.author || site.fullName}, free to read online on this page and to download as a PDF.`,
     },
   ];
 
@@ -74,10 +76,10 @@ export default function BookPage() {
     <>
       {/* Title pattern mirrored in api/seo.py. */}
       <Seo
-        title={`${item.title} — ${BOOK_KIND[item.category]}`}
+        title={`${item.title} | ${BOOK_KIND[item.category]}`}
         description={
           item.description.trim().slice(0, 300) ||
-          `Read ${item.title} by ${site.fullName} — free online and as a PDF.`
+          `Read ${item.title} by ${site.fullName}, free online and as a PDF.`
         }
         image={item.coverImage}
         jsonLd={[
@@ -130,81 +132,110 @@ export default function BookPage() {
         ]}
       />
 
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:py-14">
-        <nav aria-label="Breadcrumb" className="text-sm text-muted">
-          <Link to="/books" className="hover:text-maroon-700">
-            Books
-          </Link>
-          <span aria-hidden="true"> / </span>
-          <span className="text-ink-800">{item.title}</span>
-        </nav>
+      {/* Cover and actions left, catalogue facts right — on the cream band
+          every page opens with. */}
+      <section className="border-b border-line bg-cream-50">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:py-14">
+          <nav aria-label="Breadcrumb" className="text-sm text-muted max-sm:text-center">
+            <Link to="/books" className="hover:text-maroon-700">
+              Books
+            </Link>
+            <span aria-hidden="true"> / </span>
+            <span className="text-ink-800">{item.title}</span>
+          </nav>
 
-        <div className="mt-8 grid gap-10 lg:grid-cols-[300px_1fr]">
-          <div>
-            <div className="overflow-hidden rounded-sm shadow-cover">
-              {item.coverImage ? (
-                <img
-                  src={item.coverImage}
-                  alt={`Cover of ${item.title}`}
-                  width={300}
-                  height={400}
-                  className="aspect-[3/4] w-full object-cover"
+          <div className="mt-8 grid gap-12 lg:grid-cols-[300px_1fr] lg:gap-16">
+            <div className="mx-auto w-full max-w-[18rem] lg:max-w-none">
+              <div className="relative">
+                {/* Offset frame behind the cover, like the home portrait. */}
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 translate-x-3 translate-y-3 rounded-sm border-2 border-marigold-500/70"
                 />
-              ) : (
-                <BookCover book={item} />
+                <div className="relative overflow-hidden rounded-sm shadow-cover">
+                  {item.coverImage ? (
+                    <img
+                      src={item.coverImage}
+                      alt={`Cover of ${item.title}`}
+                      width={300}
+                      height={400}
+                      className="aspect-[3/4] w-full object-cover"
+                    />
+                  ) : (
+                    <BookCover book={item} />
+                  )}
+                </div>
+              </div>
+
+              {item.pdfUrl && (
+                <div className="mt-8 grid gap-2">
+                  <button type="button" onClick={() => setReading(true)} className="btn btn-primary w-full">
+                    <BookOpen aria-hidden="true" className="size-4" />
+                    Read online
+                  </button>
+                  <a href={downloadUrl(item)} target="_blank" rel="noreferrer" className="btn btn-secondary w-full">
+                    <Download aria-hidden="true" className="size-4" />
+                    Download PDF
+                  </a>
+                </div>
               )}
             </div>
 
-            {item.pdfUrl && (
-              <div className="mt-5 space-y-2">
-                <button type="button" onClick={() => setReading(true)} className="btn btn-primary w-full">
-                  <BookOpen aria-hidden="true" className="size-4" />
-                  Read online
-                </button>
-                <a href={downloadUrl(item)} target="_blank" rel="noreferrer" className="btn btn-secondary w-full">
-                  <Download aria-hidden="true" className="size-4" />
-                  Download PDF
-                </a>
+            <div>
+              <div className="text-center sm:text-start">
+                <p className="eyebrow">{categoryLabels[item.category]}</p>
+                <div aria-hidden="true" className="rule-accent mx-auto mt-3 sm:mx-0" />
+                <h1 className="mt-4 text-3xl sm:text-5xl">{item.title}</h1>
+                {item.author && (
+                  <p className="mt-3 text-lg text-muted">
+                    by{" "}
+                    {poetHref(item.author) ? (
+                      <Link to={poetHref(item.author)!} className="font-semibold text-maroon-700 hover:underline">
+                        {item.author}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold text-ink-800">{item.author}</span>
+                    )}
+                  </p>
+                )}
+                <ul className="mt-5 flex flex-wrap justify-center gap-2 sm:justify-start">
+                  {["Free", "PDF download", "No sign-up"].map((label) => (
+                    <li
+                      key={label}
+                      className="inline-flex items-center gap-1 rounded-full border border-line bg-paper px-3 py-1 text-xs font-semibold text-ink-800"
+                    >
+                      <Check aria-hidden="true" className="size-3.5 text-maroon-700" />
+                      {label}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            )}
-          </div>
 
-          <div>
-            <p className="eyebrow">{categoryLabels[item.category]}</p>
-            <h1 className="mt-3 text-3xl sm:text-4xl">{item.title}</h1>
-            {item.author && <p className="mt-2 text-muted">{item.author}</p>}
+              <p className="mt-8 max-w-2xl whitespace-pre-line text-lg leading-relaxed text-ink-800">
+                {item.description}
+              </p>
 
-            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-ink-800">{item.description}</p>
-
-            <dl className="mt-9 grid gap-x-8 gap-y-4 border-t border-line pt-6 sm:grid-cols-2">
-              {facts.map((fact) => (
-                <div key={fact.label} className="flex justify-between gap-4 border-b border-line pb-2">
-                  <dt className="text-sm text-muted">{fact.label}</dt>
-                  <dd className="text-sm font-semibold">{fact.value}</dd>
-                </div>
-              ))}
-            </dl>
+              <dl className="mt-9 grid gap-x-8 gap-y-3 rounded-sm border border-line bg-paper p-5 shadow-cover sm:grid-cols-2">
+                {facts.map((fact) => (
+                  <div key={fact.label} className="flex justify-between gap-4 border-b border-line pb-2 last:border-b-0">
+                    <dt className="text-sm text-muted">{fact.label}</dt>
+                    <dd className="text-end text-sm font-semibold">{fact.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* The three questions a book page answers. The strings mirror
           book_faq() in api/seo.py, which renders the same three for
           crawlers that skip JavaScript. */}
-      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <SectionHeading eyebrow="FAQ" title="Common questions" />
-        <div className="mt-8 divide-y divide-line border-y border-line">
-          {faq.map((entry) => (
-            <div
-              key={entry.q}
-              className="grid gap-2 py-5 sm:grid-cols-[minmax(0,22rem)_1fr] sm:gap-8"
-            >
-              <h3 className="text-base font-semibold">{entry.q}</h3>
-              <p className="text-sm leading-relaxed text-muted">{entry.a}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <FaqSection
+        faqs={faq}
+        title="About this book"
+        lead="Whether it is free, who wrote it and what it is about. Anything else? Ask us on WhatsApp."
+      />
 
       {/* Reviews and the form that adds to them. */}
       <section className="border-t border-line bg-cream-50">

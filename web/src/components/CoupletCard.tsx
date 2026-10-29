@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Check, Copy, Share2 } from "lucide-react";
 
 import { site } from "@/lib/site";
+import { poetHref, romanAuthor } from "@/lib/poets";
 import type { Couplet } from "@/lib/couplets";
 
 /**
@@ -20,7 +21,11 @@ export default function CoupletCard({ couplet }: { couplet: Couplet }) {
 
   // A whole poem shares as its first sher plus the link — nobody wants a
   // 60-line WhatsApp message.
-  const shareText = `${firstSher} — ${site.author} · ${window.location.origin}${couplet.href}`;
+  // Credited to the poem's own poet: most verses here are not the site
+  // owner's, and a shared Iqbal couplet signed "Mujahid Sajjad" misattributes it.
+  const poet = romanAuthor(couplet.author) ?? couplet.author ?? site.author;
+  const poetLink = poetHref(couplet.author);
+  const shareText = `${firstSher} - ${poet} · ${window.location.origin}${couplet.href}`;
 
   async function copyCouplet() {
     try {
@@ -64,6 +69,14 @@ export default function CoupletCard({ couplet }: { couplet: Couplet }) {
       >
         {couplet.title}
       </Link>
+
+      {poetLink ? (
+        <Link to={poetLink} className="px-5 pt-1 text-xs font-medium text-muted hover:text-maroon-700">
+          {poet}
+        </Link>
+      ) : (
+        <p className="px-5 pt-1 text-xs font-medium text-muted">{poet}</p>
+      )}
 
       <p dir="rtl" lang="ur" className="urdu-display grow whitespace-pre-line px-5 py-5 text-xl">
         {firstSher}

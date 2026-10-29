@@ -542,7 +542,7 @@ if DIST.is_dir():
     home = client.get("/").text
     check(
         "home title targets the head keywords",
-        "<title>Urdu Poetry &amp; Shayari, Free Books Online — Mujahid Sajjad</title>" in home,
+        "<title>Urdu Poetry &amp; Shayari | Iqbal, Ghalib, Faiz, Jaun Elia | Mujahid Sajjad</title>" in home,
         home[:300],
     )
     check("home ships a canonical", 'rel="canonical" href="' in home, home[:300])
@@ -557,14 +557,14 @@ if DIST.is_dir():
     books = client.get("/books").text
     check(
         "books title names urdu poetry books",
-        "<title>Urdu Poetry Books &amp; Criticism — Mujahid Sajjad</title>" in books,
+        "<title>Urdu Poetry Books PDF | Read Online &amp; Free Download | Mujahid Sajjad</title>" in books,
         books[:300],
     )
 
     book_page = client.get("/books/magar-manzar-nahi-mera").text
     check(
         "book page title names the book and kind",
-        "<title>Magar Manzar Nahi Mera — Urdu Poetry Book — Mujahid Sajjad</title>"
+        "<title>Magar Manzar Nahi Mera | Urdu Poetry Book | Mujahid Sajjad</title>"
         in book_page,
         book_page[:300],
     )
@@ -591,7 +591,7 @@ if DIST.is_dir():
     about = client.get("/about").text
     check(
         "about title names the college city",
-        "<title>Urdu Poet at GGC Burewala — Mujahid Sajjad</title>" in about,
+        "<title>Urdu Poet at GGC Burewala | Mujahid Sajjad</title>" in about,
         about[:300],
     )
     check(
@@ -605,8 +605,8 @@ if DIST.is_dir():
         about[:400],
     )
     check(
-        "home description names the college",
-        "Govt. Graduate College Burewala" in home.split('name="description"')[1][:400],
+        "home description names the poets, not only the site owner",
+        "Iqbal, Ghalib, Faiz" in home.split('name="description"')[1][:400],
         home[:500],
     )
     check(
@@ -625,7 +625,7 @@ if DIST.is_dir():
     check(
         "poets page is a 200 with its own title",
         poets_index.status_code == 200
-        and "<title>Urdu Poets &amp; Authors — Faiz, Jaun Elia, Mohsin Naqvi — Mujahid Sajjad</title>"
+        and "<title>Famous Urdu Poets | Iqbal, Ghalib, Faiz, Jaun Elia &amp; More | Mujahid Sajjad</title>"
         in poets_index.text,
         poets_index.text[:300],
     )
@@ -645,7 +645,7 @@ if DIST.is_dir():
     poet_page_m = client.get("/poets/mirza-ghalib")
     check(
         "poet page title uses roman name and keywords",
-        "<title>Mirza Ghalib — Ghazal, Shayari &amp; Poetry — Mujahid Sajjad</title>"
+        "<title>Mirza Ghalib Poetry in Urdu | Ghazals, Shayari &amp; Biography</title>"
         in poet_page_m.text,
         poet_page_m.text[:300],
     )
@@ -657,7 +657,8 @@ if DIST.is_dir():
     hp = client.get("/poems/hub-poem")
     check(
         "poem title includes author and kind",
-        "<title>Hub Poem — Ghazal by Faiz Ahmed Faiz — Mujahid Sajjad</title>" in hp.text,
+        # No site suffix on poem pages: it would follow another poet's name.
+        "<title>Hub Poem | Ghazal by Faiz Ahmed Faiz</title>" in hp.text,
         hp.text[:320],
     )
     client.post(
@@ -671,7 +672,7 @@ if DIST.is_dir():
     m = client.get("/poems/mir-ghazal")
     check(
         "poem head uses roman author name for Urdu-script author",
-        "<title>Mir Ghazal — Ghazal by Mirza Ghalib — Mujahid Sajjad</title>" in m.text,
+        "<title>Mir Ghazal | Ghazal by Mirza Ghalib</title>" in m.text,
         m.text[:320],
     )
 
@@ -690,8 +691,9 @@ if DIST.is_dir():
     home_root = crawler_home.split('<div id="root">')[-1]
     check(
         "crawler gets the home page as text",
-        "<h1>Urdu Poetry &amp; Shayari by Syed Mujahid Sajjad</h1>" in home_root
-        and "Welcome to the official digital library" in home_root,
+        "<h1>Urdu Poetry &amp; Shayari: Ghazals, Nazms and Books</h1>" in home_root
+        and "A free library of Urdu poetry" in home_root
+        and "<h3>Which Urdu poets can I read here?</h3>" in home_root,
         home_root[:300],
     )
     browser_home = client.get("/", headers=chrome).text
@@ -727,13 +729,49 @@ if DIST.is_dir():
     poem_root = crawler_poem.split('<div id="root">')[-1]
     check(
         "crawler gets the full verse, marked as Urdu",
-        '<div lang="ur"><p style="white-space:pre-line">a line\nnext</p>' in poem_root,
+        '<div lang="ur" dir="rtl"><p style="white-space:pre-line">a line\nnext</p>' in poem_root,
         poem_root[:400],
     )
     check(
         "poem body states its dates and skips a needless Last updated",
         "Published " in poem_root and "Last updated" not in poem_root,
         poem_root[:300],
+    )
+
+    # Roman Urdu, word meanings and explanation: saved by the admin, served on
+    # the single-verse endpoint and in the crawler body, absent from the list.
+    client.post(
+        "/api/admin/poems",
+        json={
+            "title": "Extras Ghazal",
+            "body": "dil line\nnext line",
+            "author": "Faiz Ahmed Faiz",
+            "roman": "dil line roman\nnext line roman",
+            "meanings": "دل — heart / دل\nlone",
+            "notes": "Urdu note.\n\nEnglish note.",
+        },
+    )
+    detail = client.get("/api/poems/extras-ghazal").json()
+    check(
+        "single verse returns roman, meanings and notes",
+        detail.get("roman") == "dil line roman\nnext line roman"
+        and detail.get("notes") == "Urdu note.\n\nEnglish note.",
+        str(detail),
+    )
+    listing = client.get("/api/poems").json()
+    check(
+        "verse listing leaves the extras out",
+        all("roman" not in p for p in listing),
+        str(listing[:1]),
+    )
+    extras_root = client.get("/poems/extras-ghazal", headers=gpt).text.split('<div id="root">')[-1]
+    check(
+        "crawler gets roman, meanings and notes",
+        "<h2>Roman Urdu</h2>" in extras_root
+        and '<dt lang="ur" dir="rtl">دل</dt><dd>heart / دل</dd>' in extras_root
+        and '<dt lang="ur" dir="rtl">lone</dt><dd></dd>' in extras_root
+        and "<p>English note.</p>" in extras_root,
+        extras_root[:600],
     )
 
     crawler_about = client.get("/about", headers=gpt).text
@@ -754,7 +792,7 @@ if DIST.is_dir():
     books_root = crawler_books.split('<div id="root">')[-1]
     check(
         "crawler gets the catalogue as links to every book",
-        "<h1>Books</h1>" in books_root
+        "<h1>Urdu Poetry Books</h1>" in books_root
         and '<h2><a href="/books/magar-manzar-nahi-mera">' in books_root,
         books_root[:400],
     )

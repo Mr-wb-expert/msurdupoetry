@@ -9,7 +9,17 @@ import { createPoem, getPoem, updatePoem } from "@/lib/api.ts";
 import { useApi } from "@/lib/useApi.ts";
 import { VERSE_TYPES, type VerseType } from "@/lib/types";
 
-type Draft = { slug: string; title: string; author: string; book: string; body: string; type: VerseType };
+type Draft = {
+  slug: string;
+  title: string;
+  author: string;
+  book: string;
+  body: string;
+  type: VerseType;
+  roman: string;
+  meanings: string;
+  notes: string;
+};
 
 export default function AdminPoemForm() {
   const { slug = "" } = useParams();
@@ -24,6 +34,9 @@ export default function AdminPoemForm() {
     book: "",
     body: "",
     type: "Ghazal",
+    roman: "",
+    meanings: "",
+    notes: "",
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +54,9 @@ export default function AdminPoemForm() {
         book: existing.data.book ?? "",
         body: existing.data.body,
         type: existing.data.type ?? "Ghazal",
+        roman: existing.data.roman ?? "",
+        meanings: existing.data.meanings ?? "",
+        notes: existing.data.notes ?? "",
       });
     }
   }, [existing.data]);
@@ -61,6 +77,9 @@ export default function AdminPoemForm() {
         book: draft.book.trim(),
         body: draft.body,
         type: draft.type,
+        roman: draft.roman,
+        meanings: draft.meanings,
+        notes: draft.notes,
         ...(draft.slug.trim() ? { slug: draft.slug.trim() } : {}),
       };
       const result = createdSlug
@@ -185,6 +204,55 @@ export default function AdminPoemForm() {
             Two consecutive lines make one couplet. Leave a blank line between couplets for a
             stanza break. The site does not wrap or re-flow this text.
           </p>
+        </div>
+
+        <div>
+          <label htmlFor="poem-roman" className="field-label">
+            Roman Urdu
+          </label>
+          <textarea
+            id="poem-roman"
+            rows={10}
+            value={draft.roman}
+            onChange={(event) => set("roman", event.target.value)}
+            placeholder="optional — the verse in Roman letters, same line breaks"
+            className="field"
+          />
+          <p className="field-hint">
+            Keep the same lines and blank lines as the verse above. Shown under the verse.
+          </p>
+        </div>
+
+        <div>
+          <label htmlFor="poem-meanings" className="field-label">
+            Word meanings
+          </label>
+          <textarea
+            id="poem-meanings"
+            rows={6}
+            value={draft.meanings}
+            onChange={(event) => set("meanings", event.target.value)}
+            placeholder="optional — one per line:  لفظ — meaning"
+            className="field urdu"
+          />
+          <p className="field-hint">
+            One word per line, then &quot; — &quot; and its meaning (Urdu or English).
+          </p>
+        </div>
+
+        <div>
+          <label htmlFor="poem-notes" className="field-label">
+            About this poem
+          </label>
+          <textarea
+            id="poem-notes"
+            rows={6}
+            value={draft.notes}
+            onChange={(event) => set("notes", event.target.value)}
+            placeholder="optional — a short explanation (tashreeh) or English summary"
+            className="field"
+          />
+          <p className="field-hint">Blank line between paragraphs.</p>
         </div>
 
         <div>

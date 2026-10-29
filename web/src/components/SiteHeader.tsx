@@ -103,32 +103,73 @@ export default function SiteHeader() {
       </div>
 
       {open && (
-        <nav id="mobile-nav" aria-label="Main" className="border-t border-line bg-paper md:hidden">
-          <ul className="mx-auto max-w-6xl px-4 py-2 sm:px-6">
-            {navLinks.map((link) => (
-              <li key={link.to}>
-                <NavLink
-                  to={link.to}
-                  end={link.to === "/"}
-                  className={({ isActive }) =>
-                    `block rounded-sm px-3 py-3 text-sm font-medium ${
-                      isActive ? "bg-cream-100 text-maroon-700" : ""
-                    }`
-                  }
-                >
-                  {link.label}
-                </NavLink>
-              </li>
-            ))}
-            <li className="mt-2 border-t border-line pt-2">
-              <NavLink
-                to="/admin"
-                className="block rounded-sm bg-maroon-700 px-3 py-3 text-center text-sm font-medium text-paper"
+        <nav
+          id="mobile-nav"
+          aria-label="Main"
+          className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-line bg-paper shadow-cover md:hidden"
+        >
+          <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
+            {/* The desktop bar's search, which phones had no way to reach. */}
+            <form
+              role="search"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const trimmed = query.trim();
+                navigate(trimmed ? `/books?q=${encodeURIComponent(trimmed)}` : "/books");
+              }}
+            >
+              <label htmlFor="mobile-search" className="sr-only">
+                Search books
+              </label>
+              <div className="relative">
+                <Search
+                  aria-hidden="true"
+                  className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted"
+                />
+                <input
+                  id="mobile-search"
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search books"
+                  className="field ps-9"
+                />
+              </div>
+            </form>
+
+            {/* Two columns: seven links fit without scrolling on a phone. */}
+            <ul className="mt-3 grid grid-cols-2 gap-1">
+              {[...navLinks, { to: "/contact", label: "Contact" }].map((link) => (
+                <li key={link.to}>
+                  <NavLink
+                    to={link.to}
+                    end={link.to === "/"}
+                    className={({ isActive }) =>
+                      `flex min-h-11 items-center rounded-sm px-3 text-base font-medium ${
+                        isActive ? "bg-cream-100 text-maroon-700" : "text-ink-800 active:bg-cream-50"
+                      }`
+                    }
+                  >
+                    {link.label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-line pt-3">
+              <a
+                href={site.whatsapp}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-secondary w-full"
               >
+                WhatsApp
+              </a>
+              <NavLink to="/admin" className="btn btn-primary w-full">
                 Login
               </NavLink>
-            </li>
-          </ul>
+            </div>
+          </div>
         </nav>
       )}
     </header>

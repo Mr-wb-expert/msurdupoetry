@@ -1,9 +1,12 @@
+import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { BookOpen, Feather } from "lucide-react";
 
 import Seo from "@/components/Seo.tsx";
 import { ErrorNote, Loading } from "@/components/Feedback.tsx";
 import CoupletCard from "@/components/CoupletCard.tsx";
 import { fromPoem } from "@/lib/couplets";
+import { VERSE_TYPES, type VerseType } from "@/lib/types";
 import { getPoet } from "@/lib/api.ts";
 import { useApi } from "@/lib/useApi.ts";
 
@@ -13,10 +16,38 @@ import { useApi } from "@/lib/useApi.ts";
  * a poet is only a name on a mixed feed, which is all the crawler used to see.
  */
 const CANONICAL_ORIGIN = "https://www.msurdupoetry.com";
+const OWNER = "mujahid-sajjad";
+// Spellings people really search under — mirrors ALSO_KNOWN_AS in api/seo.py.
+// Shown once, visibly, under the name; never a hidden keyword list.
+const ALSO_KNOWN_AS: Record<string, string> = {
+  "ahmed-faraz": "Ahmad Faraz",
+  "faiz-ahmed-faiz": "Faiz Ahmad Faiz",
+  "jaun-elia": "John Elia, Jon Elia",
+  "mirza-ghalib": "Mirza Galib, Mirza Asadullah Khan Ghalib",
+  "mir-taqi-mir": "Meer Taqi Meer",
+  "allama-iqbal": "Muhammad Iqbal, Iqbal",
+  "jigar-moradabadi": "Jigar Muradabadi",
+  "n-m-rashid": "Noon Meem Rashid, N. M. Rashed",
+  "altaf-hussain-hali": "Maulana Hali, Khwaja Altaf Hussain Hali",
+  "parveen-shakir": "Parvin Shakir",
+};
+// Iqbal alone has 300+ verses: render a page at a time, not every card at once.
+const PAGE_SIZE = 24;
 
 export default function PoetPage() {
   const { slug = "" } = useParams();
   const poet = useApi(() => getPoet(slug), [slug]);
+  const [form, setForm] = useState<"All" | VerseType>("All");
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  const poems = poet.data?.poems;
+  const forms = useMemo(
+    () => VERSE_TYPES.filter((type) => (poems ?? []).some((poem) => poem.type === type)),
+    [poems],
+  );
+  const shown = useMemo(
+    () => (poems ?? []).filter((poem) => form === "All" || poem.type === form),
+    [poems, form],
+  );
 
   if (poet.error) return <PoetNotFound />;
   if (poet.loading || !poet.data) {
@@ -31,15 +62,21 @@ export default function PoetPage() {
   const poetUrl = `${CANONICAL_ORIGIN}/poets/${item.slug}`;
   // Mirrors the head rule in api/seo.py: the roman name leads, because that is
   // what the queries look like ("jaun elia poetry", not the Urdu script).
+  const also = ALSO_KNOWN_AS[item.slug];
+  const count = item.poems.length;
   const description =
-    `Read Urdu ghazals, nazms and shayari by ${item.name} — ` +
-    "biography and verses, free online, no sign-up.";
+    `Read ${item.name} poetry in Urdu text` +
+    (count ? `, ${count} ghazals, nazms and shayari` : "") +
+    " with a biography. Free to read, copy and share." +
+    (also ? ` Also spelled ${also}.` : "");
 
   return (
     <>
       <Seo
-        title={`${item.name} — Ghazal, Shayari & Poetry`}
+        title={`${item.name} Poetry in Urdu | Ghazals, Shayari & Biography`}
         description={description}
+        brand={false}
+        lang="ur"
         jsonLd={[
           {
             "@context": "https://schema.org",
@@ -69,9 +106,16 @@ export default function PoetPage() {
         ]}
       />
 
-      <div className="border-b border-line bg-cream-50">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-16">
-          <nav aria-label="Breadcrumb" className="text-sm text-muted">
+      <section className="relative overflow-hidden border-b border-line bg-cream-50">
+        <span
+          aria-hidden="true"
+          lang="ur"
+          className="urdu-display pointer-events-none absolute -end-6 -top-10 select-none text-[11rem] leading-none text-maroon-700/[0.05] max-lg:hidden"
+        >
+          {item.urdu.trim().charAt(0)}
+        </span>
+        <div className="relative mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12 lg:py-16">
+          <nav aria-label="Breadcrumb" className="text-sm text-muted max-sm:text-center">
             <Link to="/poets" className="hover:text-maroon-700">
               Poets
             </Link>
@@ -79,34 +123,119 @@ export default function PoetPage() {
             <span className="text-ink-800">{item.urdu}</span>
           </nav>
 
-          <div className="text-center sm:text-start">
-            <h1 dir="rtl" lang="ur" className="urdu-display mt-6 text-4xl sm:text-5xl">
-              {item.urdu}
-            </h1>
-            <p className="mt-2 text-base font-semibold text-maroon-700">{item.name}</p>
+          <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_300px] lg:items-start">
+            <div className="text-center sm:text-start">
+              <p className="eyebrow">{item.slug === OWNER ? "Site author" : "Poet"}</p>
+              <div aria-hidden="true" className="rule-accent mx-auto mt-3 sm:mx-0" />
+              <h1 dir="rtl" lang="ur" className="urdu-display mt-5 text-4xl sm:text-start sm:text-5xl">
+                {item.urdu}
+              </h1>
+              <p className="mt-2 text-lg font-semibold text-maroon-700">
+                {item.name}: Poetry in Urdu
+              </p>
+              {also && <p className="mt-1 text-sm text-muted">Also spelled {also}</p>}
+              <p
+                dir="rtl"
+                lang="ur"
+                className="urdu-display mt-6 max-w-2xl rounded-sm border-e-4 border-marigold-500 bg-paper p-5 text-start text-lg leading-9 text-ink-800 shadow-cover"
+              >
+                {item.bio}
+              </p>
+            </div>
+
+            <aside className="rounded-sm border border-line bg-paper p-6 shadow-cover">
+              <dl className="grid grid-cols-3 gap-2 text-center">
+                {(
+                  [
+                    ["Verses", item.poems.length],
+                    ["Ghazals", item.poems.filter((poem) => poem.type === "Ghazal").length],
+                    ["Nazms", item.poems.filter((poem) => poem.type === "Nazm").length],
+                  ] as const
+                ).map(([label, value]) => (
+                  <div key={label} className="flex flex-col-reverse">
+                    <dt className="mt-1 text-xs uppercase tracking-wider text-muted">{label}</dt>
+                    <dd className="text-2xl font-bold text-ink-950">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="mt-5 grid gap-2 border-t border-line pt-5">
+                {item.slug === OWNER ? (
+                  <>
+                    <Link to="/books" className="btn btn-primary w-full">
+                      <BookOpen aria-hidden="true" className="size-4" />
+                      Read his books free
+                    </Link>
+                    <Link to="/about" className="btn btn-secondary w-full">
+                      Biography &amp; FAQ
+                    </Link>
+                  </>
+                ) : (
+                  <Link to="/poets" className="btn btn-secondary w-full">
+                    <Feather aria-hidden="true" className="size-4" />
+                    More poets
+                  </Link>
+                )}
+              </div>
+            </aside>
           </div>
-          <p dir="rtl" lang="ur" className="urdu-display mt-5 max-w-2xl text-lg leading-8 text-ink-800">
-            {item.bio}
-          </p>
-          <p className="mt-4 text-sm font-semibold uppercase tracking-[0.14em] text-muted">
-            {item.poems.length} {item.poems.length === 1 ? "verse" : "verses"} on this site
-          </p>
         </div>
-      </div>
+      </section>
 
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
         {item.poems.length === 0 ? (
-          <Link to="/poems" className="btn btn-secondary">
-            Browse all verses
-          </Link>
+          <div className="rounded-sm border border-dashed border-line bg-cream-50 p-8 text-center">
+            <p className="text-muted">No verses by {item.name} on the site yet.</p>
+            <Link to="/poems" className="btn btn-secondary mt-5">
+              Browse all verses
+            </Link>
+          </div>
         ) : (
-          <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {item.poems.map((poem) => (
-              <li key={poem.slug} className="flex">
-                <CoupletCard couplet={fromPoem(poem)} />
-              </li>
-            ))}
-          </ul>
+          <>
+            <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+              <h2 className="text-2xl">{item.name} Ghazals, Nazms &amp; Shayari</h2>
+              {forms.length > 1 && (
+                <div role="tablist" aria-label="Filter by form" className="flex flex-wrap gap-2">
+                  {(["All", ...forms] as const).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      role="tab"
+                      aria-selected={form === option}
+                      onClick={() => {
+                        setForm(option);
+                        setLimit(PAGE_SIZE);
+                      }}
+                      className={`min-h-9 rounded-full border px-4 text-sm font-semibold transition-colors ${
+                        form === option
+                          ? "border-maroon-700 bg-maroon-700 text-paper"
+                          : "border-line bg-paper text-muted hover:border-ink-900 hover:text-ink-900"
+                      }`}
+                    >
+                      {option === "All" ? "All" : `${option}s`}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {shown.slice(0, limit).map((poem) => (
+                <li key={poem.slug} className="flex">
+                  <CoupletCard couplet={fromPoem(poem)} />
+                </li>
+              ))}
+            </ul>
+            {limit < shown.length && (
+              <div className="mt-12 text-center">
+                <button
+                  type="button"
+                  onClick={() => setLimit((prev) => prev + PAGE_SIZE)}
+                  className="btn btn-secondary px-8"
+                >
+                  Load more ({shown.length - limit} remaining)
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </>
