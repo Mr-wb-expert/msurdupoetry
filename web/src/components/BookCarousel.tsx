@@ -10,8 +10,9 @@ export default function BookCarousel({ books }: { books: Book[] }) {
       getKey={(book) => book.slug}
       label="Books"
       renderItem={(book) => (
-        <div className="w-full">
-          <BookCard book={book} />
+        // Phones: the same width as the featured cover (19rem), centred.
+        <div className="mx-auto w-full max-sm:max-w-[19rem]">
+          <BookCard book={book} bareOnPhone />
         </div>
       )}
     />

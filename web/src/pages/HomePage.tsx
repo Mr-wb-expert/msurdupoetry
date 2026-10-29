@@ -1,6 +1,19 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, Download, Languages, Quote } from "lucide-react";
+import {
+  ArrowRight,
+  BadgeCheck,
+  BookOpen,
+  Building2,
+  CalendarDays,
+  Download,
+  FileText,
+  Languages,
+  PenLine,
+  Quote,
+  Tag,
+  type LucideIcon,
+} from "lucide-react";
 
 import Seo from "@/components/Seo.tsx";
 import FaqSection from "@/components/FaqSection.tsx";
@@ -11,6 +24,7 @@ import Carousel from "@/components/Carousel.tsx";
 import CoupletCard from "@/components/CoupletCard.tsx";
 import { EmptyNote, ErrorNote, Loading } from "@/components/Feedback.tsx";
 import { site } from "@/lib/site";
+import { poetHref } from "@/lib/poets";
 import { useApi } from "@/lib/useApi.ts";
 import { getBooks, getPoems, getPoets, getReviews, getVideos } from "@/lib/api.ts";
 import { fromPoem } from "@/lib/couplets";
@@ -40,6 +54,16 @@ const HOME_FAQ = [
     a: "Yes. Every book in the library is free to read online and free to download as a PDF from its own page, no sign-up and no payment.",
   },
 ];
+
+// One icon per catalogue fact on the featured book.
+const FACT_ICONS: Record<string, LucideIcon> = {
+  Author: PenLine,
+  Category: Tag,
+  Published: CalendarDays,
+  Pages: FileText,
+  Publication: Building2,
+  Price: BadgeCheck,
+};
 
 export default function HomePage() {
   const library = useApi(getBooks);
@@ -332,54 +356,97 @@ export default function HomePage() {
       {library.loading && <Loading label="Loading the library" />}
       {featured && (
         <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
-          <div className="grid gap-10 lg:grid-cols-[300px_1fr]">
-            <div>
-              <Link
-                to={`/books/${featured.slug}`}
-                className="lift relative block overflow-hidden rounded-sm shadow-cover"
-              >
-                <span className="absolute start-0 top-3 z-10 bg-maroon-700 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-paper shadow-sm">
-                  Newest book
-                </span>
-                {featured.coverImage ? (
-                  <img
-                    src={featured.coverImage}
-                    alt={`Cover of ${featured.title}`}
-                    width={300}
-                    height={400}
-                    className="aspect-[3/4] w-full object-cover"
-                  />
-                ) : (
-                  <BookCover book={featured} />
-                )}
-              </Link>
-
-              <div className="mt-5 grid gap-2">
-                <Link to={`/books/${featured.slug}`} className="btn btn-primary w-full">
-                  <BookOpen aria-hidden="true" className="size-4" />
-                  Read online
+          <div className="grid items-start gap-10 lg:grid-cols-[300px_1fr] lg:gap-16">
+            <div className="mx-auto w-full max-w-[19rem] sm:max-w-[18rem] lg:max-w-none">
+              <div className="relative">
+                {/* Offset frame behind the cover, like the book page. */}
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 translate-x-3 translate-y-3 rounded-sm border-2 border-marigold-500/70"
+                />
+                <Link
+                  to={`/books/${featured.slug}`}
+                  className="lift relative block overflow-hidden rounded-sm shadow-cover"
+                >
+                  {/* The tag lives on the cover itself, like a sticker on the book. */}
+                  <span className="absolute start-0 top-3 z-10 bg-maroon-700 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-paper shadow-sm">
+                    Newest book
+                  </span>
+                  {featured.coverImage ? (
+                    <img
+                      src={featured.coverImage}
+                      alt={`Cover of ${featured.title}`}
+                      width={380}
+                      height={507}
+                      className="aspect-[3/4] w-full object-cover"
+                    />
+                  ) : (
+                    <BookCover book={featured} />
+                  )}
                 </Link>
               </div>
+
+              <Link to={`/books/${featured.slug}`} className="btn btn-primary mt-8 w-full">
+                <BookOpen aria-hidden="true" className="size-4" />
+                Read online
+              </Link>
             </div>
 
             <div>
               <div className="text-center sm:text-start">
-                <p className="eyebrow">{categoryLabels[featured.category]}</p>
-                <h2 className="mt-3 text-3xl sm:text-4xl">{featured.title}</h2>
-                {featured.author && <p className="mt-2 text-muted">{featured.author}</p>}
+                <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
+                  <span className="rounded-full border border-line bg-cream-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-marigold-700">
+                    {categoryLabels[featured.category]}
+                  </span>
+                </div>
+                <h2 className="mt-4 text-3xl sm:text-4xl">{featured.title}</h2>
+                {featured.author && (
+                  <p className="mt-2 text-muted">
+                    by{" "}
+                    {poetHref(featured.author) ? (
+                      <Link
+                        to={poetHref(featured.author)!}
+                        className="font-semibold text-maroon-700 hover:underline"
+                      >
+                        {featured.author}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold text-ink-800">{featured.author}</span>
+                    )}
+                  </p>
+                )}
               </div>
 
-              <p className="mt-6 max-w-2xl text-lg leading-relaxed text-ink-800">
+              {/* Four lines on phones, then a way to the full text; the whole
+                  description from sm: up. */}
+              <p className="mt-6 line-clamp-4 max-w-2xl text-base leading-relaxed text-ink-800 sm:line-clamp-none sm:text-lg">
                 {featured.description}
               </p>
+              <Link
+                to={`/books/${featured.slug}`}
+                className="mt-2 inline-block text-sm font-semibold text-maroon-700 hover:underline sm:hidden"
+              >
+                Continue reading →
+              </Link>
 
-              <dl className="mt-9 grid gap-x-8 gap-y-4 border-t border-line pt-6 sm:grid-cols-2">
-                {featuredFacts.map((fact) => (
-                  <div key={fact.label} className="flex justify-between gap-4 border-b border-line pb-2">
-                    <dt className="text-sm text-muted">{fact.label}</dt>
-                    <dd className="text-sm font-semibold">{fact.value}</dd>
-                  </div>
-                ))}
+              <dl className="mt-8 grid max-w-2xl grid-cols-2 gap-3">
+                {featuredFacts.map((fact) => {
+                  const Icon = FACT_ICONS[fact.label] ?? BookOpen;
+                  return (
+                    <div
+                      key={fact.label}
+                      className="flex items-start gap-3 rounded-sm border border-line bg-cream-50 p-4"
+                    >
+                      <Icon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-marigold-700" />
+                      <div className="min-w-0">
+                        <dt className="text-xs uppercase tracking-wider text-muted">{fact.label}</dt>
+                        <dd className="mt-0.5 break-words text-sm font-semibold text-ink-900">
+                          {fact.value}
+                        </dd>
+                      </div>
+                    </div>
+                  );
+                })}
               </dl>
             </div>
           </div>
@@ -478,41 +545,52 @@ export default function HomePage() {
             renderItem={(review) => {
               const isLong = (review.body || "").length > 130;
               return (
-                <article className="lift flex w-full flex-col justify-between rounded-sm border border-line bg-paper p-5 shadow-cover transition-colors hover:border-maroon-700/30">
-                  <div className="flex flex-1 flex-col justify-center">
-                    <Quote aria-hidden="true" className="mb-2 size-5 text-marigold-500/80" />
-                    <div
-                      onClick={() => isLong && setOpenReview(review)}
-                      className={`my-auto text-center ${isLong ? "group cursor-pointer" : ""}`}
-                      title={isLong ? "Click to read full review" : undefined}
-                    >
-                      <p className="line-clamp-4 whitespace-pre-line py-1 text-sm leading-[2.2] text-ink-800">
-                        {review.body}
-                      </p>
-                      {isLong && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenReview(review);
-                          }}
-                          className="mt-2 inline-block text-xs font-semibold text-maroon-700 hover:underline"
-                        >
-                          Read more →
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                <article className="lift relative flex w-full flex-col overflow-hidden rounded-sm border border-line border-t-2 border-t-marigold-500 bg-paper p-6 shadow-cover">
+                  {/* A large faint quote mark: decoration, hidden from readers. */}
+                  <Quote
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -end-2 -top-2 size-20 rotate-180 text-maroon-700/[0.06]"
+                  />
+                  <Quote aria-hidden="true" className="size-6 fill-current text-marigold-500" />
 
-                  <div className="mt-4 border-t border-line/60 pt-3 text-start">
-                    <p className="text-xs font-semibold text-ink-950">{review.name}</p>
-                    <Link
-                      to={`/books/${review.bookSlug}`}
-                      className="mt-0.5 block text-xs text-muted hover:text-maroon-700"
+                  {/* dir="auto": a review written in Urdu reads right to left,
+                      an English one left to right, from its own first letter. */}
+                  <blockquote className="relative mt-3 flex-1">
+                    <p
+                      dir="auto"
+                      className="line-clamp-5 whitespace-pre-line text-start text-[0.95rem] leading-[2] text-ink-800"
                     >
-                      on {review.bookTitle}
-                    </Link>
-                  </div>
+                      {review.body}
+                    </p>
+                    {isLong && (
+                      <button
+                        type="button"
+                        onClick={() => setOpenReview(review)}
+                        className="mt-2 text-xs font-semibold text-maroon-700 hover:underline"
+                      >
+                        Read full review →
+                      </button>
+                    )}
+                  </blockquote>
+
+                  <footer className="relative mt-5 flex items-center gap-3 border-t border-line pt-4">
+                    <span
+                      aria-hidden="true"
+                      className="grid size-10 shrink-0 place-items-center rounded-full bg-maroon-700 text-sm font-bold uppercase text-paper"
+                    >
+                      {review.name.trim().charAt(0) || "?"}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-ink-950">{review.name}</p>
+                      <Link
+                        to={`/books/${review.bookSlug}`}
+                        className="mt-0.5 flex items-center gap-1 text-xs text-muted hover:text-maroon-700"
+                      >
+                        <BookOpen aria-hidden="true" className="size-3.5 shrink-0" />
+                        <span className="truncate">on {review.bookTitle}</span>
+                      </Link>
+                    </div>
+                  </footer>
                 </article>
               );
             }}

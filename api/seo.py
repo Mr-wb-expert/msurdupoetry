@@ -1066,8 +1066,8 @@ def _about_body(db) -> str:
     publications = db.query(Book).order_by(Book.sort_order.asc(), Book.title.asc()).limit(3).all()
     para_one = (
         "Mujahid Sajjad writes in Urdu. His poetry is built from observation rather "
-        "than abstraction the street, the classroom, the people passing through and "
-        "his criticism reads that work closely and without decoration. He teaches "
+        "than abstraction: the street, the classroom, the people passing through. "
+        "His criticism reads that work closely and without decoration. He teaches "
         f"English at {SITE_AFFILIATION}."
     )
     para_two = (

@@ -1,9 +1,25 @@
-import { Feather, GraduationCap, ScrollText } from "lucide-react";
+import {
+  BookOpen,
+  Building2,
+  Feather,
+  GraduationCap,
+  Languages,
+  ScrollText,
+  type LucideIcon,
+} from "lucide-react";
+
+// One icon per quick fact in the hero.
+const FACT_ICONS: Record<string, LucideIcon> = {
+  "Writes in": Languages,
+  Teaches: GraduationCap,
+  Books: BookOpen,
+  Institution: Building2,
+};
 
 import Seo from "@/components/Seo.tsx";
 import FaqSection from "@/components/FaqSection.tsx";
 import SectionHeading from "@/components/SectionHeading.tsx";
-import BookCard from "@/components/BookCard.tsx";
+import BookCarousel from "@/components/BookCarousel.tsx";
 import { site } from "@/lib/site";
 import { useApi } from "@/lib/useApi.ts";
 import { getBooks } from "@/lib/api.ts";
@@ -68,7 +84,10 @@ export default function AboutPage() {
       {/* Portrait left, story right — the mirror of the home hero. */}
       <section className="border-b border-line bg-cream-50">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[320px_1fr] lg:gap-16 lg:py-20">
-          <figure className="mx-auto w-full max-w-xs lg:max-w-none">
+          {/* Sticky on wide screens: the portrait stays in view while the
+              story beside it scrolls, and lets go when the section ends.
+              top-24 clears the sticky site header. */}
+          <figure className="mx-auto w-full max-w-xs lg:sticky lg:top-24 lg:max-w-none lg:self-start">
             <div className="relative">
               {/* Offset frame behind the portrait — same as the home hero. */}
               <div
@@ -101,31 +120,56 @@ export default function AboutPage() {
                   Mirrored in api/seo.py's static body. */}
               <h2 className="mt-6 text-2xl font-semibold">Who is Mujahid Sajjad?</h2>
             </div>
-            <p className="mt-6 max-w-2xl leading-relaxed text-ink-800">
+            {/* Mirrored in api/seo.py (_about_body para_one / para_two). */}
+            <p className="mt-6 max-w-2xl border-s-4 border-marigold-500 ps-4 text-lg leading-relaxed text-ink-800">
               {site.author} writes in Urdu. His poetry is built from observation rather than
-              abstraction the street, the classroom, the people passing through and his criticism
+              abstraction: the street, the classroom, the people passing through. His criticism
               reads that work closely and without decoration. He teaches English at{" "}
               {site.affiliation}.
             </p>
-            <p className="mt-4 max-w-2xl leading-relaxed text-ink-800">
-              The collection <span className="font-medium text-ink-900">Magar Manzar Nahi Mera</span>{" "}
-              gathers those ghazals and nazms between two covers, and Ghazala Anjum's critical
-              study of the work accompanies it in the library. Both are free here in full,
-              read online, or download the PDF, alongside essays and contributed writing from
-              across his years of teaching.
-            </p>
 
-            <dl className="mt-8 grid gap-x-8 gap-y-4 border-t border-line pt-6 sm:grid-cols-2">
-              {facts.map((fact) => (
-                <div key={fact.label}>
-                  <dt className="text-sm text-muted">{fact.label}</dt>
-                  <dd className="text-sm font-semibold">{fact.value}</dd>
-                </div>
-              ))}
-              <div>
-                <dt className="text-sm text-muted">Institution</dt>
-                <dd className="text-sm font-semibold">{site.affiliation}</dd>
-              </div>
+            {/* The collection, as a card that leads straight to the book. */}
+            <div className="mt-6 flex max-w-2xl gap-4 rounded-sm border border-line bg-paper p-5 shadow-cover">
+              <span className="grid size-11 shrink-0 place-items-center rounded-sm bg-maroon-700 text-paper">
+                <BookOpen aria-hidden="true" className="size-5" />
+              </span>
+              <p className="text-sm leading-relaxed text-ink-800">
+                The collection{" "}
+                <Link
+                  to="/books/magar-manzar-nahi-mera"
+                  className="font-semibold text-maroon-700 hover:underline"
+                >
+                  Magar Manzar Nahi Mera
+                </Link>{" "}
+                gathers those ghazals and nazms between two covers, and Ghazala Anjum's critical
+                study of the work accompanies it in the library. Both are free here in full,
+                read online, or download the PDF, alongside essays and contributed writing from
+                across his years of teaching.
+              </p>
+            </div>
+
+            {/* Quick facts: a 2×2 grid of small cards on every screen size. */}
+            <dl className="mt-6 grid max-w-2xl grid-cols-2 gap-3">
+              {[...facts, { label: "Institution", value: "GGC Burewala", note: "Government of the Punjab" }].map(
+                (fact) => {
+                  const Icon = FACT_ICONS[fact.label] ?? BookOpen;
+                  return (
+                    <div
+                      key={fact.label}
+                      className="flex items-start gap-3 rounded-sm border border-line bg-paper p-4"
+                    >
+                      <Icon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-marigold-700" />
+                      <div className="min-w-0">
+                        <dt className="text-xs uppercase tracking-wider text-muted">{fact.label}</dt>
+                        <dd className="mt-0.5 text-sm font-semibold text-ink-900">{fact.value}</dd>
+                        {"note" in fact && fact.note && (
+                          <dd className="text-xs text-muted">{fact.note}</dd>
+                        )}
+                      </div>
+                    </div>
+                  );
+                },
+              )}
             </dl>
           </div>
         </div>
@@ -187,11 +231,8 @@ export default function AboutPage() {
         ) : library.loading ? (
           <p className="mt-8 text-sm text-muted">Loading the bibliography…</p>
         ) : (
-          <div className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {books.slice(0, 3).map((book) => (
-              <BookCard key={book.slug} book={book} />
-            ))}
-          </div>
+          // Same swipeable shelf as the home page: one book per screen on phones.
+          <BookCarousel books={books} />
         )}
       </section>
 
