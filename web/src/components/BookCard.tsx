@@ -12,15 +12,9 @@ import { categoryLabels, type Book } from "@/lib/types";
  * free-download action — with no price and no cart, because nothing here is
  * for sale.
  */
-export default function BookCard({ book, bareOnPhone = false }: { book: Book; bareOnPhone?: boolean }) {
+export default function BookCard({ book }: { book: Book }) {
   return (
-    <article
-      className={`lift group flex h-full flex-col rounded-sm border border-line bg-paper p-4 shadow-cover ${
-        // On a phone shelf the card frame is dropped so the cover gets the
-        // full width, matching the featured cover above it.
-        bareOnPhone ? "max-sm:border-0 max-sm:bg-transparent max-sm:p-0 max-sm:shadow-none" : ""
-      }`}
-    >
+    <article className="lift group flex h-full flex-col rounded-sm border border-line bg-paper p-4 shadow-cover">
       <Link
         to={`/books/${book.slug}`}
         className="block overflow-hidden rounded-sm bg-cream-100 shadow-cover"
