@@ -170,6 +170,9 @@ class PoetOut(WireModel):
     urdu: str
     bio: str
     poem_count: int
+    # The language the poet writes in, for page titles ("Punjabi" for a
+    # Punjabi writer); every poet without one in api/poets.py is Urdu.
+    language: str = "Urdu"
 
 
 class PoetDetail(PoetOut):

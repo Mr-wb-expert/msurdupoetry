@@ -215,6 +215,7 @@ ALSO_KNOWN_AS = {
     "n-m-rashid": "Noon Meem Rashid, N. M. Rashed",
     "altaf-hussain-hali": "Maulana Hali, Khwaja Altaf Hussain Hali",
     "parveen-shakir": "Parvin Shakir",
+    "razzaq-shahid": "Razzaq Shah, Dr. Razzaq Shahid",
 }
 
 # Book pages name their category; mirrors BOOK_KIND in web/src/lib/types.ts.
@@ -526,20 +527,31 @@ def head(path: str, db, origin: str) -> dict:
             # poetry" and "parveen shakir shayari", never the Urdu script.
             # "<poet> poetry in urdu" is the query shape for every poet in
             # KEYWORD-DATA.json; "biography" is Rekhta's other poet target.
-            title = f"{poet['name']} Poetry in Urdu | Ghazals, Shayari & Biography"
             brand = False
             lang = "ur"
+            language = poet.get("language", "Urdu")
             count = (
                 db.query(func.count(Poem.id)).filter(Poem.author.in_(poet["aliases"])).scalar()
                 or 0
             )
             also = ALSO_KNOWN_AS.get(poet["slug"])
-            description = (
-                f"Read {poet['name']} poetry in Urdu text"
-                + (f", {count} ghazals, nazms and shayari" if count else "")
-                + " with a biography. Free to read, copy and share."
-                + (f" Also spelled {also}." if also else "")
-            )
+            if language == "Urdu":
+                title = f"{poet['name']} Poetry in Urdu | Ghazals, Shayari & Biography"
+                description = (
+                    f"Read {poet['name']} poetry in Urdu text"
+                    + (f", {count} ghazals, nazms and shayari" if count else "")
+                    + " with a biography. Free to read, copy and share."
+                )
+            else:
+                # A writer in another language (a Punjabi author) has books
+                # here, not Urdu verse: the title must not promise either.
+                title = f"{poet['name']} | {language} Poetry, Books & Biography"
+                description = (
+                    f"{poet['name']}: {language} writer and educator. Read his "
+                    f"{language} books free online and as PDF, with a biography in Urdu."
+                )
+            description += f" Also spelled {also}." if also else ""
+            # Mirrors poetTitle()/poetDescription() in PoetPage.tsx.
             graph = [
                 {
                     "@context": "https://schema.org",
@@ -1020,12 +1032,33 @@ def _poet_body(db, poet) -> str:
         Poem.author.in_(poet["aliases"])
     ).order_by(Poem.created_at.desc()).all()
     count = len(poems)
+    # The poet's books in the library: for a writer whose work here is books
+    # (a Punjabi author), these are the whole page. Mirrors PoetPage.tsx.
+    books = (
+        db.query(Book.slug, Book.title, Book.published_year)
+        .filter(Book.author.in_(poet["aliases"]))
+        .order_by(Book.sort_order.asc(), Book.title.asc())
+        .all()
+    )
+    language = poet.get("language", "Urdu")
     return (
         f'<nav>{_link("/poets", "Poets")} / {_e(poet["urdu"])}</nav>'
         f'<h1 lang="ur" dir="rtl">{_e(poet["urdu"])}</h1>'
-        f"<p>{_e(poet['name'])}</p>"
+        f"<p>{_e(poet['name'])}: {_e(language)} poetry</p>"
         f'<p lang="ur" dir="rtl">{_e(poet["bio"])}</p>'
-        f"<p>{count} {'verse' if count == 1 else 'verses'} on this site</p>"
+        + (
+            f"<h2>{_e(poet['name'])} books</h2><ul>"
+            + "".join(
+                f"<li>{_link(f'/books/{b.slug}', b.title)}"
+                + (f" ({b.published_year})" if b.published_year else "")
+                + "</li>"
+                for b in books
+            )
+            + "</ul>"
+            if books
+            else ""
+        )
+        + (f"<p>{count} {'verse' if count == 1 else 'verses'} on this site</p>" if count or not books else "")
         + (
             "<ul>"
             + "".join(
@@ -1035,7 +1068,7 @@ def _poet_body(db, poet) -> str:
             )
             + "</ul>"
             if count
-            else f'<p>{_link("/poems", "Browse all verses")}</p>'
+            else ("" if books else f'<p>{_link("/poems", "Browse all verses")}</p>')
         )
         + (
             # The owner's hub links his books and biography: until his own

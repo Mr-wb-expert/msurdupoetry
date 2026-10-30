@@ -269,6 +269,7 @@ def list_poets(db: Session = Depends(get_db)):
             urdu=poet["urdu"],
             bio=poet["bio"],
             poem_count=sum(counts.get(alias, 0) for alias in poet["aliases"]),
+            language=poet.get("language", "Urdu"),
         )
         for poet in POETS
     ]
@@ -304,6 +305,7 @@ def read_poet(slug: str, db: Session = Depends(get_db)):
         urdu=poet["urdu"],
         bio=poet["bio"],
         poem_count=len(poems),
+        language=poet.get("language", "Urdu"),
         poems=poems,
     )
     _poet_detail_cache[slug] = (now, detail)

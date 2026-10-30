@@ -115,7 +115,7 @@ function PoetCard({ poet, owner }: { poet: Poet; owner: boolean }) {
 
       <div className="mt-auto flex items-center justify-between border-t border-line pt-4 text-xs font-semibold uppercase tracking-[0.14em] text-muted">
         <span>
-          {owner && poet.poemCount === 0
+          {poet.poemCount === 0
             ? "Books & biography"
             : `${poet.poemCount} ${poet.poemCount === 1 ? "verse" : "verses"}`}
         </span>

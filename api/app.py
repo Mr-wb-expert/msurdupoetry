@@ -350,11 +350,15 @@ def llms_txt(db: Session = Depends(get_db)) -> Response:
         ", free to read online and download as PDF\n"
         for b in books
     )
-    poet_lines = "".join(
-        f"- [{poet['name']} ({poet['urdu']})]({origin}/poets/{poet['slug']}): "
-        f"{sum(counts.get(a, 0) for a in poet['aliases'])} verses\n"
-        for poet in POETS
-    )
+    def _poet_line(poet: dict) -> str:
+        verses = sum(counts.get(a, 0) for a in poet["aliases"])
+        language = poet.get("language", "Urdu")
+        what = f"{verses} verses" if verses else "books and biography"
+        if language != "Urdu":
+            what = f"{language} writer, {what}"
+        return f"- [{poet['name']} ({poet['urdu']})]({origin}/poets/{poet['slug']}): {what}\n"
+
+    poet_lines = "".join(_poet_line(poet) for poet in POETS)
     return Response(
         content=(
             "# Mujahid Sajjad | msurdupoetry.com\n"

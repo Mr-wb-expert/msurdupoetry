@@ -32,7 +32,7 @@ for alias, name in py.items():
 # A latin alias with no ROMAN row falls back to the string itself, so it only
 # works when the api name is exactly that string.
 for alias, name in py.items():
-    if alias.isascii() and alias != name:
+    if alias.isascii() and alias != name and roman.get(alias) != name:
         problems.append(f"latin alias {alias!r} but api name {name!r} — needs a ROMAN row")
 
 # A ROMAN row for a name the api does not know means the page and the head

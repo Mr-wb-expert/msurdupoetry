@@ -84,6 +84,8 @@ export type Poet = {
   urdu: string;
   bio: string;
   poemCount: number;
+  /** The language the poet writes in ("Urdu" unless api/poets.py says otherwise). */
+  language: string;
 };
 
 export type PoetDetail = Poet & { poems: Poem[] };

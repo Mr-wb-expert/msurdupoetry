@@ -337,7 +337,7 @@ export default function HomePage() {
                     </span>
                     <span className="mt-2 text-sm font-semibold">{poet.name}</span>
                     <span className="mt-0.5 text-xs text-cream-200">
-                      {poet.slug === "mujahid-sajjad"
+                      {poet.poemCount === 0
                         ? "Books & biography"
                         : `${poet.poemCount} verses`}
                     </span>

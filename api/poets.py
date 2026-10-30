@@ -94,6 +94,22 @@ POETS = [
         ),
     },
     {
+        # A Punjabi writer: his work here is books, not verses, so his page
+        # is built from the books saved under these author strings.
+        "slug": "razzaq-shahid",
+        "name": "Razzaq Shahid",
+        "urdu": "رزاق شاہد",
+        "language": "Punjabi",
+        "aliases": ["Dr. Razzaq Shahid", "Razzaq Shahid", "ڈاکٹر رزاق شاہد", "رزاق شاہد"],
+        "bio": (
+            "پروفیسر ڈاکٹر رزاق شاہد پنجابی زبان کے معروف ادیب اور ماہرِ تعلیم ہیں، "
+            "جنہوں نے اپنی زندگی کے کئی برس تدریس کے لیے وقف کیے۔ "
+            "ریٹائرمنٹ کے بعد وہ ملتان میں مقیم ہیں، تاہم ان کا علمی سفر جاری ہے اور "
+            "وہ گورنمنٹ کالج یونیورسٹی لاہور میں وزٹنگ پروفیسر کے طور پر خدمات انجام دے رہے ہیں۔ "
+            "پنجابی ادب اور تعلیم کے لیے ان کی خدمات کو قدر کی نگاہ سے دیکھا جاتا ہے۔"
+        ),
+    },
+    {
         "slug": "majeed-amjad",
         "name": "Majeed Amjad",
         "urdu": "مجید امجد",

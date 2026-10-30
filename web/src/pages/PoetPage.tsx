@@ -7,7 +7,9 @@ import { ErrorNote, Loading } from "@/components/Feedback.tsx";
 import CoupletCard from "@/components/CoupletCard.tsx";
 import { fromPoem } from "@/lib/couplets";
 import { VERSE_TYPES, type VerseType } from "@/lib/types";
-import { getPoet } from "@/lib/api.ts";
+import BookCarousel from "@/components/BookCarousel.tsx";
+import { poetHref } from "@/lib/poets";
+import { getBooks, getPoet } from "@/lib/api.ts";
 import { useApi } from "@/lib/useApi.ts";
 
 /**
@@ -30,6 +32,7 @@ const ALSO_KNOWN_AS: Record<string, string> = {
   "n-m-rashid": "Noon Meem Rashid, N. M. Rashed",
   "altaf-hussain-hali": "Maulana Hali, Khwaja Altaf Hussain Hali",
   "parveen-shakir": "Parvin Shakir",
+  "razzaq-shahid": "Razzaq Shah, Dr. Razzaq Shahid",
 };
 // Iqbal alone has 300+ verses: render a page at a time, not every card at once.
 const PAGE_SIZE = 24;
@@ -37,6 +40,13 @@ const PAGE_SIZE = 24;
 export default function PoetPage() {
   const { slug = "" } = useParams();
   const poet = useApi(() => getPoet(slug), [slug]);
+  // The poet's books in the library, matched through the same author aliases
+  // that link a book to this page. Mirrors _poet_body in api/seo.py.
+  const library = useApi(getBooks);
+  const books = useMemo(
+    () => (library.data ?? []).filter((book) => poetHref(book.author) === `/poets/${slug}`),
+    [library.data, slug],
+  );
   const [form, setForm] = useState<"All" | VerseType>("All");
   const [limit, setLimit] = useState(PAGE_SIZE);
   const poems = poet.data?.poems;
@@ -64,16 +74,25 @@ export default function PoetPage() {
   // what the queries look like ("jaun elia poetry", not the Urdu script).
   const also = ALSO_KNOWN_AS[item.slug];
   const count = item.poems.length;
+  // Urdu poets get the "<poet> poetry in urdu" title; a writer in another
+  // language (a Punjabi author) gets one that promises his books instead.
+  const language = item.language || "Urdu";
+  const title =
+    language === "Urdu"
+      ? `${item.name} Poetry in Urdu | Ghazals, Shayari & Biography`
+      : `${item.name} | ${language} Poetry, Books & Biography`;
   const description =
-    `Read ${item.name} poetry in Urdu text` +
-    (count ? `, ${count} ghazals, nazms and shayari` : "") +
-    " with a biography. Free to read, copy and share." +
+    (language === "Urdu"
+      ? `Read ${item.name} poetry in Urdu text` +
+        (count ? `, ${count} ghazals, nazms and shayari` : "") +
+        " with a biography. Free to read, copy and share."
+      : `${item.name}: ${language} writer and educator. Read his ${language} books free online and as PDF, with a biography in Urdu.`) +
     (also ? ` Also spelled ${also}.` : "");
 
   return (
     <>
       <Seo
-        title={`${item.name} Poetry in Urdu | Ghazals, Shayari & Biography`}
+        title={title}
         description={description}
         brand={false}
         lang="ur"
@@ -131,7 +150,7 @@ export default function PoetPage() {
                 {item.urdu}
               </h1>
               <p className="mt-2 text-lg font-semibold text-maroon-700">
-                {item.name}: Poetry in Urdu
+                {item.name}: Poetry in {language}
               </p>
               {also && <p className="mt-1 text-sm text-muted">Also spelled {also}</p>}
               <p
@@ -144,17 +163,25 @@ export default function PoetPage() {
             </div>
 
             <aside className="rounded-sm border border-line bg-paper p-6 shadow-cover">
+              {/* A poet with books but no verses here counts books, not zeros. */}
               <dl className="grid grid-cols-3 gap-2 text-center">
-                {(
-                  [
-                    ["Verses", item.poems.length],
-                    ["Ghazals", item.poems.filter((poem) => poem.type === "Ghazal").length],
-                    ["Nazms", item.poems.filter((poem) => poem.type === "Nazm").length],
-                  ] as const
+                {(item.poems.length === 0 && books.length > 0
+                  ? ([
+                      ["Books", books.length],
+                      ["Language", language],
+                      ["PDF", "Free"],
+                    ] as const)
+                  : ([
+                      ["Verses", item.poems.length],
+                      ["Ghazals", item.poems.filter((poem) => poem.type === "Ghazal").length],
+                      ["Nazms", item.poems.filter((poem) => poem.type === "Nazm").length],
+                    ] as const)
                 ).map(([label, value]) => (
                   <div key={label} className="flex flex-col-reverse">
                     <dt className="mt-1 text-xs uppercase tracking-wider text-muted">{label}</dt>
-                    <dd className="text-2xl font-bold text-ink-950">{value}</dd>
+                    <dd className={`font-bold text-ink-950 ${typeof value === "number" ? "text-2xl" : "text-base leading-8"}`}>
+                      {value}
+                    </dd>
                   </div>
                 ))}
               </dl>
@@ -181,8 +208,23 @@ export default function PoetPage() {
         </div>
       </section>
 
+      {books.length > 0 && (
+        <section className="border-b border-line">
+          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+            <h2 className="text-2xl">
+              {item.name} books{" "}
+              <span className="text-base font-normal text-muted">({books.length})</span>
+            </h2>
+            <p className="mt-2 text-sm text-muted">
+              Free to read online and to download as PDF.
+            </p>
+            <BookCarousel books={books} />
+          </div>
+        </section>
+      )}
+
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        {item.poems.length === 0 ? (
+        {item.poems.length === 0 && books.length > 0 ? null : item.poems.length === 0 ? (
           <div className="rounded-sm border border-dashed border-line bg-cream-50 p-8 text-center">
             <p className="text-muted">No verses by {item.name} on the site yet.</p>
             <Link to="/poems" className="btn btn-secondary mt-5">
